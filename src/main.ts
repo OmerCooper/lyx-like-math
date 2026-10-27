@@ -5,7 +5,7 @@ import { findMathAt, needsRawFallback } from "./latex/findMath";
 import { MathSession, mathSessionExtension } from "./editor/session";
 import { initMathLiveAssets } from "./mathliveAssets";
 
-export const RAW_FALLBACK_NOTICE = "LyX Math: this formula is edited as LaTeX text";
+export const RAW_FALLBACK_NOTICE = "LyX-like Math: this formula is edited as LaTeX text";
 
 export default class LyxMathPlugin extends Plugin {
   async onload() {

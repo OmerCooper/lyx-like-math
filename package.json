@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-lyx-math",
+  "name": "obsidian-lyx-like-math",
   "version": "0.1.0",
   "description": "LyX-style WYSIWYG math editing for Obsidian",
   "main": "main.js",
@@ -8,7 +8,8 @@
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run",
-    "deploy": "npm run build && node scripts/deploy.mjs"
+    "deploy": "npm run build && node scripts/deploy.mjs",
+    "e2e": "node e2e/run.mjs"
   },
   "license": "MIT",
   "dependencies": {
@@ -21,6 +22,7 @@
     "builtin-modules": "^5.4.0",
     "esbuild": "^0.28.2",
     "obsidian": "^1.14.4",
+    "playwright-core": "^1.64.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
   }

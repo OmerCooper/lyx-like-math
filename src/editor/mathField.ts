@@ -1,4 +1,5 @@
 import { MathfieldElement } from "mathlive";
+import { commandTemplate, typedCommand } from "../latex/commands";
 import { latexModeKeyAction } from "./keys";
 
 export interface LyxFieldEvents {
@@ -29,14 +30,21 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
         e.preventDefault();
         e.stopPropagation();
       }
-      // for complete-then-type the key goes on to MathLive and is typed after the command
-      if (action !== "none") mf.executeCommand(["complete", "accept"]);
+      // for complete-then-type the key goes on to MathLive and is typed into the first box
+      if (action !== "none") finishCommand(mf);
+      if (action === "complete-then-type" && e.key === "\\") clearSelection(mf);
       return;
     }
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       ev.onExit("after");
+    } else if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      lyxTab(mf);
+    } else if (e.key === "\\") {
+      clearSelection(mf);
     }
   }, true);
 
@@ -47,6 +55,33 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
   mf.addEventListener("focusout", () => ev.onBlur());
   mf.addEventListener("input", () => ev.onDirty());
   return mf;
+}
+
+// Replace the \command being typed with the command and its empty boxes, cursor in the first box.
+// (MathLive's own completion inserts \sqrt, \hat, ... without a box, so what you type next
+// lands outside them.)
+function finishCommand(mf: MathfieldElement): void {
+  const command = typedCommand(mf.getValue(0, mf.position));
+  mf.executeCommand(["complete", "reject"]);
+  if (command) mf.insert(commandTemplate(command), { selectionMode: "placeholder", format: "latex" });
+}
+
+// LyX Tab: go to the next empty box if there is one ahead, otherwise leave the current box.
+// (MathLive's Tab selects the whole formula when no box is left, so the next key replaces it.)
+function lyxTab(mf: MathfieldElement): void {
+  const before = mf.position;
+  mf.executeCommand("moveToNextPlaceholder");
+  if (mf.position > before) return;
+  mf.position = before;
+  mf.executeCommand("moveAfterParent");
+}
+
+// MathLive leaves a typed "\" selected when it replaces a selected empty box, so the next
+// letter overwrites it; put the cursor in the box instead so "\" starts a command cleanly.
+function clearSelection(mf: MathfieldElement): void {
+  if (mf.selectionIsCollapsed) return;
+  const [start] = mf.selection.ranges[0];
+  mf.selection = { ranges: [[start, start]] };
 }
 
 // Options MathLive only accepts once the field is in the DOM. Safe to call more than once.
