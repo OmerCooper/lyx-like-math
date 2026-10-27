@@ -1,0 +1,27 @@
+{
+  "name": "obsidian-lyx-math",
+  "version": "0.1.0",
+  "description": "LyX-style WYSIWYG math editing for Obsidian",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run",
+    "deploy": "npm run build && node scripts/deploy.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "mathlive": "0.101.0"
+  },
+  "devDependencies": {
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
+    "@types/node": "^26.6.5",
+    "builtin-modules": "^5.4.0",
+    "esbuild": "^0.28.2",
+    "obsidian": "^1.14.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
