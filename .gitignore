@@ -3,3 +3,4 @@ main.js
 *.log
 .superpowers/
 data.json
+e2e/dist/

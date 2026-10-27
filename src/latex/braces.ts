@@ -1,13 +1,6 @@
 // LyX always writes braces: \frac{4}{3}, \sqrt{2}, x^{2}. MathLive (and old notes) use the
 // short forms \frac43, \sqrt2, x^2. lyxBraces rewrites the short forms and touches nothing else.
-
-const ARG_COUNT: Record<string, number> = {
-  frac: 2, dfrac: 2, tfrac: 2, cfrac: 2, binom: 2, dbinom: 2, tbinom: 2,
-  sqrt: 1, hat: 1, bar: 1, vec: 1, dot: 1, ddot: 1, tilde: 1, widehat: 1, widetilde: 1,
-  overline: 1, underline: 1, overrightarrow: 1, overleftarrow: 1,
-  mathbb: 1, mathcal: 1, mathrm: 1, mathbf: 1, mathit: 1, mathsf: 1, boldsymbol: 1,
-  operatorname: 1, text: 1,
-};
+import { ARG_COUNT } from "./commands";
 
 // Arguments of these are text, not math: keep their contents verbatim.
 const VERBATIM = new Set(["text", "operatorname"]);
