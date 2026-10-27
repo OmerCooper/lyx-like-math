@@ -2,7 +2,12 @@ import { SYMBOL_GROUPS, filterSymbols } from "../src/panel/symbols";
 
 test("groups in LyX toolbar order", () => {
   expect(SYMBOL_GROUPS.map((g) => g.name)).toEqual(["Fractions & roots", "Accents", "Greek", "Operators",
-    "Relations", "Arrows", "Big operators", "Delimiters", "Functions", "Misc"]);
+    "Relations", "Arrows", "Big operators", "Delimiters", "Matrices", "Functions", "Misc"]);
+});
+test("matrices start as 2x2 with empty cells", () => {
+  const m = SYMBOL_GROUPS.find((g) => g.name === "Matrices")!;
+  expect(m.items[0]).toBe("\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}");
+  expect(filterSymbols(SYMBOL_GROUPS, "pmatrix").flatMap((g) => g.items).length).toBe(4);
 });
 test("frac has two boxes", () => {
   expect(SYMBOL_GROUPS[0].items[0]).toBe("\\frac{#?}{#?}");

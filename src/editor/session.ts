@@ -2,6 +2,7 @@ import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/v
 import { Extension, Prec, StateEffect, StateField } from "@codemirror/state";
 import type { MathfieldElement } from "mathlive";
 import { CommitInput, planCommit } from "../latex/commit";
+import { withoutPlaceholders } from "../latex/braces";
 import { renumberChanges, splitTag, withTag } from "../latex/numbering";
 import { configureAfterMount, createLyxMathField } from "./mathField";
 
@@ -81,7 +82,7 @@ export class MathSession {
       return null;
     }
     configureAfterMount(session.field);
-    session.baseline = session.field.value;
+    session.baseline = withoutPlaceholders(session.field.value);
     MathSession.active = session;
     requestAnimationFrame(() => {
       session.field.focus();
@@ -98,7 +99,7 @@ export class MathSession {
     const spec = this.view.state.field(widgetField);
     const target = spec ? { ...this.target, from: spec.from, to: spec.to } : this.target;
     const doc = this.view.state.doc.toString();
-    const body = this.field.value;
+    const body = withoutPlaceholders(this.field.value);
     const wasNumbered = target.inner !== undefined && splitTag(target.inner).tag !== null;
     const dirty = body !== this.baseline || this.numbered !== wasNumbered;
     // an empty formula is deleted, number and all

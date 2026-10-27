@@ -46,6 +46,10 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
       e.preventDefault();
       e.stopPropagation();
       ev.onExit("after");
+    } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      matrixCommand(mf, e.shiftKey ? "addColumnAfter" : "addRowAfter");
     } else if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -81,6 +85,19 @@ function lyxTab(mf: MathfieldElement): void {
   if (mf.position > before) return;
   mf.position = before;
   mf.executeCommand("moveAfterParent");
+}
+
+// Ctrl+Enter: new row, Ctrl+Shift+Enter: new column — only inside a matrix. Elsewhere MathLive
+// would turn the formula into a multi-line one, which v1 doesn't support, so that is undone.
+function matrixCommand(mf: MathfieldElement, command: "addRowAfter" | "addColumnAfter"): void {
+  const before = mf.value;
+  const position = mf.position;
+  mf.executeCommand(command);
+  const environments = (latex: string) => (latex.match(/\\begin\{|\\displaylines/g) ?? []).length;
+  if (environments(mf.value) > environments(before)) {
+    mf.value = before;
+    mf.position = position;
+  }
 }
 
 // MathLive leaves a typed "\" selected when it replaces a selected empty box, so the next

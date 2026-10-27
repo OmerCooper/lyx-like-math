@@ -14,6 +14,15 @@ export const SYMBOL_GROUPS: SymbolGroup[] = [
   { name: "Arrows", items: ["\\to", "\\leftarrow", "\\leftrightarrow", "\\Rightarrow", "\\Leftarrow", "\\Leftrightarrow", "\\mapsto", "\\uparrow", "\\downarrow", "\\longrightarrow", "\\rightleftharpoons"] },
   { name: "Big operators", items: ["\\sum_{#?}^{#?}", "\\prod_{#?}^{#?}", "\\int_{#?}^{#?}", "\\iint", "\\oint", "\\lim_{#?}", "\\bigcup_{#?}", "\\bigcap_{#?}"] },
   { name: "Delimiters", items: ["\\left(#?\\right)", "\\left[#?\\right]", "\\left\\{#?\\right\\}", "\\left|#?\\right|", "\\left\\|#?\\right\\|", "\\left\\langle#?\\right\\rangle", "\\left\\lfloor#?\\right\\rfloor", "\\left\\lceil#?\\right\\rceil"] },
+  // Ctrl+Enter adds a row, Ctrl+Shift+Enter a column
+  { name: "Matrices", items: [
+    "\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}", "\\begin{bmatrix}#?&#?\\\\#?&#?\\end{bmatrix}",
+    "\\begin{vmatrix}#?&#?\\\\#?&#?\\end{vmatrix}", "\\begin{Bmatrix}#?&#?\\\\#?&#?\\end{Bmatrix}",
+    "\\begin{Vmatrix}#?&#?\\\\#?&#?\\end{Vmatrix}", "\\begin{matrix}#?&#?\\\\#?&#?\\end{matrix}",
+    "\\begin{pmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{pmatrix}",
+    "\\begin{bmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{bmatrix}",
+    "\\begin{pmatrix}#?\\\\#?\\end{pmatrix}", "\\begin{pmatrix}#?\\\\#?\\\\#?\\end{pmatrix}",
+  ] },
   { name: "Functions", items: ["\\sin", "\\cos", "\\tan", "\\arcsin", "\\arccos", "\\arctan", "\\sinh", "\\cosh", "\\log", "\\ln", "\\exp", "\\max", "\\min", "\\det", "\\dim", "\\ker"] },
   { name: "Misc", items: ["\\infty", "\\hbar", "\\ell", "\\forall", "\\exists", "\\emptyset", "\\Re", "\\Im", "\\aleph", "\\angle", "\\degree", "\\dots", "\\cdots", "\\vdots", "\\ddots", "\\prime"] },
 ];

@@ -87,3 +87,8 @@ export function lyxBraces(latex: string): string {
   }
   return out;
 }
+
+// MathLive writes an empty box as \placeholder{}, which Obsidian can't render; save it empty.
+export function withoutPlaceholders(latex: string): string {
+  return latex.replace(/\\placeholder\{\}/g, "");
+}

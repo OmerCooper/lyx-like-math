@@ -1,11 +1,12 @@
 // Browser harness: a real MathLive field configured exactly as in the plugin.
 import { configureAfterMount, createLyxMathField } from "../src/editor/mathField";
-import { lyxBraces } from "../src/latex/braces";
+import { lyxBraces, withoutPlaceholders } from "../src/latex/braces";
 
 declare global {
   interface Window {
     makeField(display: boolean, initial: string): void;
     fieldValue(): string;
+    insertLatex(latex: string): void;
     exits: string[];
   }
 }
@@ -28,4 +29,10 @@ window.makeField = (display, initial) => {
 };
 
 // what would be saved in the note
-window.fieldValue = () => lyxBraces(current?.value ?? "");
+window.fieldValue = () => lyxBraces(withoutPlaceholders(current?.value ?? ""));
+
+// what a formula panel button does
+window.insertLatex = (latex) => {
+  (current as unknown as { insert(l: string, o: object): void })
+    .insert(latex, { selectionMode: "placeholder", format: "latex" });
+};

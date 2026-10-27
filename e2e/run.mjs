@@ -10,6 +10,9 @@ const BROWSERS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 ];
 
+const PMATRIX = "\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}";
+
+// "@latex" = click a formula panel button
 // [name, keys to type (Playwright key names or text), expected saved LaTeX]
 export const CASES = [
   ["frac space", ["\\frac", "Space", "4", "Tab", "3"], "\\frac{4}{3}"],
@@ -27,6 +30,17 @@ export const CASES = [
   ["alpha stays letters", ["alpha"], "alpha"],
   ["slash is not a fraction", ["a", "/", "b"], "a/b"],
   ["paren not auto-paired", ["(", "a"], "(a"],
+  ["matrix: Tab goes cell to cell", ["@" + PMATRIX, "a", "Tab", "b", "Tab", "c", "Tab", "d"],
+    "\\begin{pmatrix}a & b\\\\ c & d\\end{pmatrix}"],
+  ["matrix: Tab after the last cell leaves it", ["@" + PMATRIX, "a", "Tab", "b", "Tab", "c", "Tab", "d", "Tab", "+"],
+    "\\begin{pmatrix}a & b\\\\ c & d\\end{pmatrix}+"],
+  ["matrix: Ctrl+Enter adds a row", ["@" + PMATRIX, "a", "Tab", "b", "Tab", "c", "Tab", "d", "Control+Enter", "e"],
+    "\\begin{pmatrix}a & b\\\\ c & d\\\\ e & \\end{pmatrix}"],
+  ["matrix: Ctrl+Shift+Enter adds a column", ["@" + PMATRIX, "a", "Control+Shift+Enter", "x"],
+    "\\begin{pmatrix}a & x & \\\\  &  & \\end{pmatrix}"],
+  ["Ctrl+Enter outside a matrix does nothing", ["a", "Control+Enter", "b"], "ab"],
+  ["Ctrl+Shift+Enter outside a matrix does nothing", ["a", "Control+Shift+Enter", "b"], "ab"],
+  ["empty box is saved empty", ["\\frac", "1"], "\\frac{1}{}"],
 ];
 
 const dist = path.resolve("e2e/dist");
@@ -48,7 +62,8 @@ for (const [name, keys, expected] of CASES) {
   await page.evaluate(() => window.makeField(false, ""));
   await page.waitForTimeout(50);
   for (const k of keys) {
-    if (/^[A-Z][a-zA-Z]+$/.test(k) && k !== "Z") await page.keyboard.press(k);
+    if (k.startsWith("@")) await page.evaluate((l) => window.insertLatex(l), k.slice(1));
+    else if (/^[A-Z][a-zA-Z+]+$/.test(k) && k !== "Z") await page.keyboard.press(k);
     else await page.keyboard.type(k, { delay: 10 });
   }
   await page.waitForTimeout(50);
