@@ -18,13 +18,13 @@ export default class LyxMathPlugin extends Plugin {
       id: "insert-inline",
       name: "Insert or edit inline math",
       hotkeys: [{ modifiers: ["Mod"], key: "m" }],
-      editorCallback: (editor) => this.openAtCursor(editor, false),
+      editorCallback: (editor) => this.run(() => this.openAtCursor(editor, false)),
     });
     this.addCommand({
       id: "insert-display",
       name: "Insert or edit display math",
       hotkeys: [{ modifiers: ["Mod", "Shift"], key: "m" }],
-      editorCallback: (editor) => this.openAtCursor(editor, true),
+      editorCallback: (editor) => this.run(() => this.openAtCursor(editor, true)),
     });
     this.addCommand({
       id: "renumber-equations",
@@ -38,6 +38,16 @@ export default class LyxMathPlugin extends Plugin {
 
   onunload() {
     MathSession.active?.commit("none");
+  }
+
+  // Errors become a visible notice (and the console), not a silent no-op.
+  private async run(action: () => Promise<unknown>): Promise<void> {
+    try {
+      await action();
+    } catch (e) {
+      console.error("LyX-like Math:", e);
+      new Notice(`LyX-like Math error: ${(e as Error).message ?? e}`);
+    }
   }
 
   // Edit the formula under the cursor, or start a new one (from the selection, if any).

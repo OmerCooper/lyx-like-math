@@ -9,7 +9,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run",
     "deploy": "npm run build && node scripts/deploy.mjs",
-    "e2e": "node e2e/run.mjs"
+    "e2e": "node e2e/run.mjs && node e2e/session-run.mjs"
   },
   "license": "MIT",
   "dependencies": {
