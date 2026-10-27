@@ -47,6 +47,23 @@ for (const [name, doc, cursor, display, numbered, keys, expected] of CASES) {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}: ${JSON.stringify(got)}` +
     (ok ? "" : `  (expected ${JSON.stringify(expected)}, opened=${opened}) ${errors.join(" | ")}`));
 }
+// Plugin disabled + re-enabled without restarting Obsidian: the bundle loads a second time while
+// <math-field> is still registered to the first load's class.
+fs.writeFileSync(path.join(dist, "session-twice.html"), '<!doctype html><meta charset="utf-8"><body>' +
+  '<script src="session-harness.js"></script><script src="session-harness.js"></script></body>');
+await page.goto("file:///" + path.join(dist, "session-twice.html").replace(/\\/g, "/"));
+await page.evaluate(() => window.setDoc("ab", 1));
+const reopened = await page.evaluate(() => window.open(1, 1, false, "", false));
+await page.waitForTimeout(100);
+await page.keyboard.type("x", { delay: 10 });
+await page.keyboard.press("Escape");
+await page.waitForTimeout(100);
+const reloadDoc = await page.evaluate(() => window.docText());
+const reloadErrors = await page.evaluate(() => window.errors.splice(0));
+const reloadOk = reopened && reloadDoc === "a$x$b" && reloadErrors.length === 0;
+if (!reloadOk) failed++;
+console.log(`${reloadOk ? "PASS" : "FAIL"}  works after plugin reload: ${JSON.stringify(reloadDoc)} ${reloadErrors.join(" | ")}`);
+
 await browser.close();
-console.log(`${CASES.length - failed}/${CASES.length} passed`);
+console.log(`${CASES.length + 1 - failed}/${CASES.length + 1} passed`);
 process.exit(failed ? 1 : 0);

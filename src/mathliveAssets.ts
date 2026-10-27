@@ -2,6 +2,7 @@ import { normalizePath, Plugin } from "obsidian";
 import { MathfieldElement } from "mathlive";
 import fontsCss from "mathlive/fonts.css";
 import staticCss from "mathlive/static.css";
+import { registeredMathfield } from "./editor/mathField";
 
 // Point MathLive at the fonts shipped in the plugin folder (no CDN) and load the stylesheets
 // needed to lay out formulas rendered outside a math-field (formula panel buttons).
@@ -9,8 +10,10 @@ export function initMathLiveAssets(plugin: Plugin): void {
   const dir = normalizePath(`${plugin.manifest.dir}/fonts`);
   // getResourcePath adds a cache-busting query; file names are appended after the directory
   const fontsUrl = plugin.app.vault.adapter.getResourcePath(dir).replace(/\?.*$/, "");
-  MathfieldElement.fontsDirectory = fontsUrl;
-  MathfieldElement.soundsDirectory = null;
+  for (const cls of new Set([MathfieldElement, registeredMathfield()])) {
+    cls.fontsDirectory = fontsUrl;
+    cls.soundsDirectory = null;
+  }
 
   const style = document.createElement("style");
   style.id = "lyx-math-mathlive-css";
