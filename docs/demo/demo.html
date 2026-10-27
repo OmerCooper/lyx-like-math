@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LyX Math Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/mathlive@0.101.0/dist/mathlive.min.js"></script>
+<!-- needed to lay out formulas rendered outside the editor (note view + panel buttons) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mathlive@0.101.0/dist/mathlive-fonts.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mathlive@0.101.0/dist/mathlive-static.css">
+<style>
+  :root { --bg:#1e1e1e; --panel:#262626; --text:#dcddde; --muted:#888; --accent:#7f6df2; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family: system-ui, sans-serif; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 24px 16px; }
+  .help { background:var(--panel); border-left:3px solid var(--accent); padding:10px 14px; font-size:14px; line-height:1.6; margin-bottom:18px; border-radius:4px; }
+  kbd { background:#333; border:1px solid #555; border-radius:3px; padding:1px 5px; font-size:12px; }
+  h1 { font-size: 26px; margin: 0 0 12px; }
+  #note { min-height: 260px; outline:none; font-size:17px; line-height:1.8; white-space: pre-wrap; }
+  .formula { cursor:pointer; padding:0 2px; border-radius:3px; }
+  .formula:hover { background:#333; }
+  .block { display:block; text-align:center; margin:10px 0; }
+  math-field { background:#2d2b45; color:var(--text); border:1px solid var(--accent); border-radius:4px;
+    --caret-color: #fff; --selection-background-color:#5a4fb0; --placeholder-color:#9a8cff;
+    --contains-highlight-background-color: transparent; font-size:18px; }
+  math-field.inline { display:inline-block; min-width:30px; vertical-align:middle; padding:0 4px; }
+  math-field.block { display:block; width:100%; text-align:center; padding:6px; }
+  math-field::part(virtual-keyboard-toggle), math-field::part(menu-toggle) { display:none; }
+  h3 { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:28px 0 6px; }
+  #md { background:#151515; padding:12px; border-radius:4px; font-family: Consolas, monospace; font-size:13px; white-space:pre-wrap; color:#b5cea8; }
+  body { padding-right: 300px; }
+  #panel { position:fixed; top:0; right:0; bottom:0; width:290px; background:#202020; border-left:1px solid #333;
+    overflow-y:auto; padding:10px 12px; box-sizing:border-box; font-size:13px; }
+  #panel .title { font-weight:600; margin-bottom:8px; }
+  #search { width:100%; box-sizing:border-box; background:#151515; border:1px solid #444; color:var(--text);
+    padding:5px 8px; border-radius:4px; margin-bottom:6px; }
+  #panel details { margin:4px 0; }
+  #panel summary { cursor:pointer; color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.05em; padding:4px 0; }
+  .btns { display:flex; flex-wrap:wrap; gap:3px; }
+  .btn { min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; padding:0 4px;
+    background:#2a2a2a; border:1px solid #3a3a3a; border-radius:4px; cursor:pointer; font-size:14px; }
+  .btn:hover { border-color:var(--accent); background:#2d2b45; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="help">
+    <b>Throwaway demo, not the real plugin.</b> Click in the note and try:<br>
+    <kbd>Ctrl</kbd>+<kbd>M</kbd> inline math &nbsp;·&nbsp; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> display math<br>
+    Type <code>\frac</code> then <kbd>Space</kbd> → boxes &nbsp;·&nbsp; <kbd>Tab</kbd> / arrows move between boxes &nbsp;·&nbsp;
+    <code>\Delta</code> <kbd>Space</kbd> → Δ &nbsp;·&nbsp; <code>x^2</code>, <code>a_1</code><br>
+    Leave the math: <kbd>Esc</kbd>, or arrow right past the end &nbsp;·&nbsp; Click a formula to edit it again<br>
+    <b>New:</b> formula panel on the right — click a symbol to insert it into the open math box (or start a new one)
+  </div>
+  <h1>Lecture notes</h1>
+  <div id="note" contenteditable="true">The energy is <span class="formula" contenteditable="false" data-latex="E=mc^{2}"></span> and the change is small.
+
+</div>
+  <h3>What Obsidian would save in the .md file</h3>
+  <div id="md"></div>
+</div>
+<aside id="panel">
+  <div class="title">Formula panel</div>
+  <input id="search" placeholder="Search: frac, alpha, arrow…">
+  <div id="groups"></div>
+</aside>
+<script>
+const note = document.getElementById('note');
+const md = document.getElementById('md');
+
+function render(span) {
+  span.innerHTML = MathLive.convertLatexToMarkup(span.dataset.latex || '\\square',
+    { defaultMode: span.classList.contains('block') ? 'math' : 'inline-math' });
+}
+document.querySelectorAll('.formula').forEach(render);
+
+// MathLive shortens single digits (\frac{4}{3} -> \frac43, \sqrt{2} -> \sqrt2, x^{2} -> x^2);
+// put the braces back so the saved LaTeX looks like LyX's
+function lyxLatex(s) {
+  return s
+    .replace(/\\(frac|dfrac|tfrac|binom|dbinom|tbinom)(\d)(\d)/g, '\\$1{$2}{$3}')
+    .replace(/\\sqrt(\d)/g, '\\sqrt{$1}')
+    .replace(/([\^_])(\d)/g, '$1{$2}');
+}
+
+function placeCaretAfter(node) {
+  const r = document.createRange();
+  r.setStartAfter(node); r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  note.focus();
+}
+
+function finish(mf) {
+  if (!mf.isConnected) return;
+  const latex = lyxLatex(mf.value.trim());
+  const isBlock = mf.classList.contains('block');
+  if (!latex) { const prev = mf.previousSibling; mf.remove(); if (prev) placeCaretAfter(prev); else note.focus(); update(); return; }
+  const span = document.createElement('span');
+  span.className = 'formula' + (isBlock ? ' block' : '');
+  span.contentEditable = 'false';
+  span.dataset.latex = latex;
+  render(span);
+  mf.replaceWith(span);
+  if (!span.nextSibling) span.after(document.createTextNode(isBlock ? '\n' : ' '));
+  placeCaretAfter(span);
+  update();
+}
+
+function openEditor(isBlock, latex, replaceNode) {
+  const mf = document.createElement('math-field');
+  mf.className = isBlock ? 'block' : 'inline';
+  mf.mathVirtualKeyboardPolicy = 'manual';
+  // LyX has none of these automatisms
+  // (inlineShortcuts can only be set once the field is mounted — done below)
+  mf.addEventListener('mount', () => { mf.inlineShortcuts = {}; });
+  mf.smartFence = false;
+  mf.smartSuperscript = false;
+  mf.smartMode = false;
+  mf.addEventListener('focusin', () => { activeMf = mf; });
+  if (replaceNode) replaceNode.replaceWith(mf);
+  else {
+    const sel = getSelection();
+    if (!sel.rangeCount || !note.contains(sel.anchorNode)) note.appendChild(mf);
+    else { const r = sel.getRangeAt(0); r.deleteContents(); r.insertNode(mf); }
+  }
+  try { mf.inlineShortcuts = {}; } catch { /* not mounted yet; the mount listener handles it */ }
+  mf.value = latex || '';
+  mf.addEventListener('keydown', e => {
+    if (mf.mode === 'latex') {
+      // LyX-style: Space (or Esc) finishes the typed command exactly as typed
+      if (e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation();
+        mf.executeCommand(['complete', 'accept']);
+      } else if (e.key.length === 1 && !/[a-zA-Z]/.test(e.key) && !e.ctrlKey) {
+        // a non-letter (digit, +, ^, \ ...) ends the command too, then gets typed
+        mf.executeCommand(['complete', 'accept']);
+      }
+      return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(mf); }
+  }, true);
+  mf.addEventListener('move-out', e => { if (e.detail.direction === 'forward') finish(mf); });
+  mf.addEventListener('focusout', () => setTimeout(() => finish(mf), 0));
+  mf.addEventListener('input', update);
+  requestAnimationFrame(() => { mf.focus(); if (latex) mf.executeCommand('moveToMathfieldEnd'); });
+  activeMf = mf;
+  update();
+  return mf;
+}
+
+note.addEventListener('keydown', e => {
+  if (e.ctrlKey && (e.key === 'm' || e.key === 'M')) {
+    e.preventDefault();
+    openEditor(e.shiftKey, '', null);
+  }
+});
+note.addEventListener('click', e => {
+  const f = e.target.closest('.formula');
+  if (f) openEditor(f.classList.contains('block'), f.dataset.latex, f);
+});
+note.addEventListener('input', update);
+
+function serialize(node) {
+  let out = '';
+  node.childNodes.forEach(n => {
+    if (n.nodeType === 3) out += n.textContent.replace(/ /g, ' ');
+    else if (n.matches?.('.formula')) out += n.classList.contains('block') ? `\n$$${n.dataset.latex}$$\n` : `$${n.dataset.latex}$`;
+    else if (n.tagName === 'MATH-FIELD') out += n.classList.contains('block') ? `\n$$${lyxLatex(n.value)}$$\n` : `$${lyxLatex(n.value)}$`;
+    else if (n.tagName === 'BR') out += '\n';
+    else out += serialize(n) + (n.tagName === 'DIV' ? '\n' : '');
+  });
+  return out;
+}
+// ---- Formula panel (LyX math toolbar groups). #? = empty box, cursor goes to the first one ----
+let activeMf = null;
+const GROUPS = {
+  'Fractions & roots': ['\\frac{#?}{#?}', '\\sqrt{#?}', '\\sqrt[#?]{#?}', '\\binom{#?}{#?}', '#?^{#?}', '#?_{#?}', '#?_{#?}^{#?}'],
+  'Accents': ['\\hat{#?}', '\\bar{#?}', '\\vec{#?}', '\\dot{#?}', '\\ddot{#?}', '\\tilde{#?}', '\\overline{#?}', '\\underline{#?}', '\\widehat{#?}', '\\overrightarrow{#?}'],
+  'Greek': ['\\alpha','\\beta','\\gamma','\\delta','\\epsilon','\\varepsilon','\\zeta','\\eta','\\theta','\\vartheta','\\iota','\\kappa','\\lambda','\\mu','\\nu','\\xi','\\pi','\\rho','\\sigma','\\tau','\\upsilon','\\phi','\\varphi','\\chi','\\psi','\\omega',
+            '\\Gamma','\\Delta','\\Theta','\\Lambda','\\Xi','\\Pi','\\Sigma','\\Upsilon','\\Phi','\\Psi','\\Omega'],
+  'Operators': ['\\pm','\\mp','\\times','\\div','\\cdot','\\circ','\\ast','\\star','\\cap','\\cup','\\wedge','\\vee','\\oplus','\\otimes','\\nabla','\\partial'],
+  'Relations': ['\\leq','\\geq','\\neq','\\approx','\\equiv','\\sim','\\simeq','\\cong','\\propto','\\ll','\\gg','\\in','\\notin','\\subset','\\subseteq','\\supset','\\perp','\\parallel'],
+  'Arrows': ['\\to','\\leftarrow','\\leftrightarrow','\\Rightarrow','\\Leftarrow','\\Leftrightarrow','\\mapsto','\\uparrow','\\downarrow','\\longrightarrow','\\rightleftharpoons'],
+  'Big operators': ['\\sum_{#?}^{#?}','\\prod_{#?}^{#?}','\\int_{#?}^{#?}','\\iint','\\oint','\\lim_{#?}','\\bigcup_{#?}','\\bigcap_{#?}'],
+  'Delimiters': ['\\left(#?\\right)','\\left[#?\\right]','\\left\\{#?\\right\\}','\\left|#?\\right|','\\left\\|#?\\right\\|','\\left\\langle#?\\right\\rangle','\\left\\lfloor#?\\right\\rfloor','\\left\\lceil#?\\right\\rceil'],
+  'Functions': ['\\sin','\\cos','\\tan','\\arcsin','\\arccos','\\arctan','\\sinh','\\cosh','\\log','\\ln','\\exp','\\max','\\min','\\det','\\dim','\\ker'],
+  'Misc': ['\\infty','\\hbar','\\ell','\\forall','\\exists','\\emptyset','\\Re','\\Im','\\aleph','\\angle','\\degree','\\dots','\\cdots','\\vdots','\\ddots','\\prime'],
+};
+const groupsEl = document.getElementById('groups');
+for (const [name, items] of Object.entries(GROUPS)) {
+  const d = document.createElement('details'); d.open = true;
+  d.innerHTML = `<summary>${name}</summary>`;
+  const box = document.createElement('div'); box.className = 'btns';
+  for (const latex of items) {
+    const b = document.createElement('div'); b.className = 'btn';
+    b.title = latex.replace(/#\?/g, '□');
+    b.dataset.search = (name + ' ' + latex).toLowerCase();
+    b.innerHTML = MathLive.convertLatexToMarkup(latex.replace(/#\?/g, '\\square'));
+    b.addEventListener('mousedown', e => e.preventDefault()); // keep focus in the math box
+    b.addEventListener('click', () => insertFromPanel(latex));
+    box.appendChild(b);
+  }
+  d.appendChild(box); groupsEl.appendChild(d);
+}
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase().replace(/\\/g, '');
+  groupsEl.querySelectorAll('details').forEach(d => {
+    let any = false;
+    d.querySelectorAll('.btn').forEach(b => { const hit = !q || b.dataset.search.includes(q); b.style.display = hit ? '' : 'none'; any ||= hit; });
+    d.style.display = any ? '' : 'none';
+  });
+});
+function insertFromPanel(latex) {
+  let mf = activeMf && activeMf.isConnected ? activeMf : null;
+  if (!mf) mf = openEditor(false, '', null);
+  // cursor lands in the first empty box, like LyX
+  mf.insert(latex, { selectionMode: 'placeholder', format: 'latex' });
+  mf.focus();
+}
+
+function update() { md.textContent = '# Lecture notes\n\n' + serialize(note).trim(); }
+update();
+</script>
+</body>
+</html>
