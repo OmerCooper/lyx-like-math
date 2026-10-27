@@ -46,6 +46,12 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
       e.preventDefault();
       e.stopPropagation();
       ev.onExit("after");
+    } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.altKey) {
+      // in Obsidian the plugin's keymap scope has already run it (Ctrl+Enter is an Obsidian hotkey)
+      const handled = e.defaultPrevented;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!handled) matrixCommand(mf, e.shiftKey ? "addColumnAfter" : "addRowAfter");
     } else if (e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -83,6 +89,26 @@ function lyxTab(mf: MathfieldElement): void {
   mf.executeCommand("moveAfterParent");
 }
 
+// Ctrl+Enter: new row, Ctrl+Shift+Enter: new column — only inside a matrix. Elsewhere MathLive
+// would turn the formula into a multi-line one, which v1 doesn't support, so that is undone.
+// Returns false when the cursor wasn't in a matrix.
+export function matrixCommand(mf: MathfieldElement, command: "addRowAfter" | "addColumnAfter"): boolean {
+  const before = mf.value;
+  const position = mf.position;
+  mf.executeCommand(command);
+  const environments = (latex: string) => (latex.match(/\\begin\{|\\displaylines/g) ?? []).length;
+  if (environments(mf.value) > environments(before)) {
+    mf.value = before;
+    mf.position = position;
+    return false;
+  }
+  return true;
+}
+
+// Commands Obsidian's MathJax knows but MathLive 0.101 doesn't; shown as their equivalent,
+// saved as typed.
+export const EXTRA_MACROS = { dots: "\\ldots" };
+
 // MathLive leaves a typed "\" selected when it replaces a selected empty box, so the next
 // letter overwrites it; put the cursor in the box instead so "\" starts a command cleanly.
 function clearSelection(mf: MathfieldElement): void {
@@ -98,5 +124,6 @@ export function configureAfterMount(mf: MathfieldElement): void {
   mf.inlineShortcuts = {};
   mf.keybindings = mf.keybindings.filter((k) => k.key !== "/");
   mf.menuItems = [];
+  mf.macros = { ...mf.macros, ...EXTRA_MACROS };
   mf.value = initialValue.get(mf) ?? "";
 }

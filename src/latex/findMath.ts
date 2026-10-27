@@ -95,6 +95,8 @@ export function findMathAt(doc: string, pos: number): MathRange | null {
 export function needsRawFallback(range: MathRange, validate: (latex: string) => unknown[]): boolean {
   // a plugin-managed number (\tag{3}) is split off; any other \tag is the user's own
   const latex = splitTag(range.inner).body;
-  if (/\\(begin|label|tag)\b/.test(latex) || latex.includes("\n")) return true;
+  // matrices (from the formula panel) are edited in the math editor; other environments are not
+  const rest = latex.replace(/\\(begin|end)\{[pbBvV]?matrix\}/g, "");
+  if (/\\(begin|label|tag)\b/.test(rest) || latex.includes("\n")) return true;
   return validate(latex).length > 0;
 }

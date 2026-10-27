@@ -1,4 +1,4 @@
-import { Editor, Notice, Plugin } from "obsidian";
+import { Editor, MarkdownView, Notice, Plugin, Scope } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import { validateLatex } from "mathlive";
 import { findMathAt, needsRawFallback } from "./latex/findMath";
@@ -6,10 +6,15 @@ import { renumberChanges, splitTag } from "./latex/numbering";
 import { MathSession, mathSessionExtension } from "./editor/session";
 import { showDisplayMenu } from "./editor/displayMenu";
 import { initMathLiveAssets } from "./mathliveAssets";
+import { FormulaPanelView, VIEW_TYPE_FORMULA_PANEL } from "./panel/FormulaPanelView";
+import type { PanelAction } from "./panel/symbols";
+import { matrixCommand } from "./editor/mathField";
 
 export const RAW_FALLBACK_NOTICE = "LyX-like Math: this formula is edited as LaTeX text";
 
 export default class LyxMathPlugin extends Plugin {
+  private lastMarkdown: MarkdownView | null = null;
+
   async onload() {
     initMathLiveAssets(this);
     this.registerEditorExtension(mathSessionExtension);
@@ -26,6 +31,32 @@ export default class LyxMathPlugin extends Plugin {
       hotkeys: [{ modifiers: ["Mod", "Shift"], key: "m" }],
       editorCallback: (editor) => this.run(() => this.openAtCursor(editor, true)),
     });
+    this.registerView(VIEW_TYPE_FORMULA_PANEL, (leaf) => new FormulaPanelView(leaf, {
+      insert: (latex) => this.run(() => this.insertFromPanel(latex)),
+      action: (command) => this.matrixAction(command),
+    }));
+
+    // Ctrl+Enter is an Obsidian hotkey (open link in new tab) that Obsidian handles before the math
+    // editor sees the key; while the editor is open, this scope takes Ctrl(+Shift)+Enter first.
+    const matrixKeys = new Scope(this.app.scope);
+    matrixKeys.register(["Mod"], "Enter", () => { this.matrixKey("addRowAfter"); return false; });
+    matrixKeys.register(["Mod", "Shift"], "Enter", () => { this.matrixKey("addColumnAfter"); return false; });
+    MathSession.onActiveChange = (open) => {
+      if (open) this.app.keymap.pushScope(matrixKeys);
+      else this.app.keymap.popScope(matrixKeys);
+    };
+    this.addRibbonIcon("sigma", "Open LyX formula panel", () => this.run(() => this.openPanel()));
+    this.addCommand({
+      id: "open-formula-panel",
+      name: "Open LyX formula panel",
+      callback: () => this.run(() => this.openPanel()),
+    });
+    // the panel inserts at the cursor of the note last worked in (clicking the panel makes it active)
+    this.registerEvent(this.app.workspace.on("active-leaf-change", (leaf) => {
+      if (leaf?.view instanceof MarkdownView) this.lastMarkdown = leaf.view;
+    }));
+    this.lastMarkdown = this.app.workspace.getActiveViewOfType(MarkdownView);
+
     this.addCommand({
       id: "renumber-equations",
       name: "Renumber equations",
@@ -38,6 +69,50 @@ export default class LyxMathPlugin extends Plugin {
 
   onunload() {
     MathSession.active?.commit("none");
+    MathSession.onActiveChange = null;
+  }
+
+  private matrixKey(command: PanelAction["command"]): void {
+    const session = MathSession.active;
+    if (session && session.field.contains(document.activeElement)) matrixCommand(session.field, command);
+  }
+
+  // "+ row" / "+ column" panel buttons
+  private matrixAction(command: PanelAction["command"]): void {
+    const session = MathSession.active;
+    if (!session || !matrixCommand(session.field, command)) {
+      new Notice("LyX-like Math: put the cursor inside a matrix first");
+      return;
+    }
+    session.field.focus();
+  }
+
+  private async openPanel(): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_FORMULA_PANEL)[0];
+    if (!leaf) {
+      leaf = workspace.getRightLeaf(false)!;
+      await leaf.setViewState({ type: VIEW_TYPE_FORMULA_PANEL, active: true });
+    }
+    await workspace.revealLeaf(leaf);
+  }
+
+  // Into the open math editor, cursor in the first empty box; with none open, start inline math
+  // at the note's cursor first.
+  private async insertFromPanel(latex: string): Promise<void> {
+    let session = MathSession.active;
+    if (!session) {
+      const note = this.lastMarkdown;
+      if (!note?.leaf.parent || note.getMode() !== "source") {
+        new Notice("LyX-like Math: click into a note first");
+        return;
+      }
+      this.app.workspace.setActiveLeaf(note.leaf, { focus: true });
+      session = await this.openAtCursor(note.editor, false);
+      if (!session) return;
+    }
+    session.field.insert(latex, { selectionMode: "placeholder", format: "latex" });
+    session.field.focus();
   }
 
   // Errors become a visible notice (and the console), not a silent no-op.

@@ -1,4 +1,4 @@
-import { lyxBraces } from "../src/latex/braces";
+import { lyxBraces, withoutPlaceholders } from "../src/latex/braces";
 
 const cases: [string, string][] = [
   ["\\frac43", "\\frac{4}{3}"],
@@ -31,4 +31,14 @@ test.each(cases)("lyxBraces(%s)", (input, expected) => {
 
 test("idempotent", () => {
   for (const [, out] of cases) expect(lyxBraces(out)).toBe(out);
+});
+
+test("empty boxes are saved empty", () => {
+  expect(withoutPlaceholders(String.raw`\frac{1}{\placeholder{}}`)).toBe(String.raw`\frac{1}{}`);
+  expect(withoutPlaceholders(String.raw`\begin{pmatrix}a & \placeholder{}\\ \placeholder{} & d\end{pmatrix}`))
+    .toBe(String.raw`\begin{pmatrix}a & \\  & d\end{pmatrix}`);
+});
+test("matrix keeps its rows and gets braces inside", () => {
+  expect(lyxBraces(String.raw`\begin{pmatrix}a^2 & \frac12\\ c & d\end{pmatrix}`))
+    .toBe(String.raw`\begin{pmatrix}a^{2} & \frac{1}{2}\\ c & d\end{pmatrix}`);
 });

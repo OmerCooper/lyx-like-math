@@ -35,3 +35,42 @@ math-field::part(virtual-keyboard-toggle),
 math-field::part(menu-toggle) {
   display: none;
 }
+
+/* Formula panel */
+.lyx-math-panel-search {
+  width: 100%;
+  margin-bottom: var(--size-4-2);
+}
+.lyx-math-panel summary {
+  cursor: pointer;
+  font-weight: var(--font-semibold);
+  margin: var(--size-4-2) 0 var(--size-4-1);
+}
+.lyx-math-panel-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+}
+.lyx-math-panel-button {
+  min-width: 2.2em;
+  height: 2.6em;
+  padding: 0 var(--size-4-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.95em;
+}
+.lyx-math-panel-button:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+.lyx-math-panel-action {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}

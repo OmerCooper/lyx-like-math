@@ -2,6 +2,7 @@ import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/v
 import { Extension, Prec, StateEffect, StateField } from "@codemirror/state";
 import type { MathfieldElement } from "mathlive";
 import { CommitInput, planCommit } from "../latex/commit";
+import { withoutPlaceholders } from "../latex/braces";
 import { renumberChanges, splitTag, withTag } from "../latex/numbering";
 import { configureAfterMount, createLyxMathField } from "./mathField";
 
@@ -51,6 +52,8 @@ export const mathSessionExtension: Extension = Prec.highest(widgetField);
 
 export class MathSession {
   static active: MathSession | null = null;
+  // told when an editor opens (true) or closes (false)
+  static onActiveChange: ((open: boolean) => void) | null = null;
 
   readonly field: MathfieldElement;
   private baseline = "";
@@ -81,8 +84,9 @@ export class MathSession {
       return null;
     }
     configureAfterMount(session.field);
-    session.baseline = session.field.value;
+    session.baseline = withoutPlaceholders(session.field.value);
     MathSession.active = session;
+    MathSession.onActiveChange?.(true);
     requestAnimationFrame(() => {
       session.field.focus();
       session.field.executeCommand("moveToMathfieldEnd");
@@ -93,12 +97,15 @@ export class MathSession {
   commit(exit: Exit): void {
     if (this.closed) return;
     this.closed = true;
-    if (MathSession.active === this) MathSession.active = null;
+    if (MathSession.active === this) {
+      MathSession.active = null;
+      MathSession.onActiveChange?.(false);
+    }
 
     const spec = this.view.state.field(widgetField);
     const target = spec ? { ...this.target, from: spec.from, to: spec.to } : this.target;
     const doc = this.view.state.doc.toString();
-    const body = this.field.value;
+    const body = withoutPlaceholders(this.field.value);
     const wasNumbered = target.inner !== undefined && splitTag(target.inner).tag !== null;
     const dirty = body !== this.baseline || this.numbered !== wasNumbered;
     // an empty formula is deleted, number and all

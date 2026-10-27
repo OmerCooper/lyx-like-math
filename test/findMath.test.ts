@@ -50,3 +50,12 @@ test("fallback when validator reports errors", () => {
 test("display block with surrounding newlines is fine", () => {
   expect(needsRawFallback(r("\n\\frac{a}{b}\n", true), ok)).toBe(false);
 });
+
+test("single-line matrix is edited in the math editor", () => {
+  const r = { from: 0, to: 0, display: true, inner: String.raw`\begin{pmatrix}a & b\\ c & d\end{pmatrix}` };
+  expect(needsRawFallback(r, () => [])).toBe(false);
+});
+test("other environments stay raw text", () => {
+  const r = { from: 0, to: 0, display: true, inner: String.raw`\begin{aligned}a &= b\end{aligned}` };
+  expect(needsRawFallback(r, () => [])).toBe(true);
+});

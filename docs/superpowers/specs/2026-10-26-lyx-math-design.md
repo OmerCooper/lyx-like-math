@@ -151,3 +151,13 @@ without thinking about LaTeX syntax, and the notes stay plain Markdown + LaTeX.
   (lets you add/remove the number). Clicking / Ctrl+M opens it directly, keeping its number.
 - The tag is not shown inside the editor; it is split off on open and re-added on commit.
 - A numeric `\tag` no longer triggers the raw-text fallback (supersedes that bullet for numeric tags).
+
+## Addendum 2026-10-27: matrices (user request)
+
+The user asked for a matrix option in the formula panel; this narrows the "no multi-line math"
+non-goal for matrices only. A "Matrices" panel group inserts pmatrix/bmatrix/vmatrix/Bmatrix/
+Vmatrix/matrix (2x2), pmatrix/bmatrix 3x3 and 2- and 3-row column vectors, saved on one line
+(`\begin{pmatrix}a & b\ c & d\end{pmatrix}`). Tab moves cell to cell and leaves after the last;
+Ctrl+Enter adds a row, Ctrl+Shift+Enter a column (Claude's call; LyX has no default column key),
+both only inside a matrix. Saved single-line matrices reopen in the math editor; other
+environments still open as raw text. Empty boxes are saved empty, never as `\placeholder{}`.
