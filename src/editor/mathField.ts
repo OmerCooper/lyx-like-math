@@ -8,13 +8,20 @@ export interface LyxFieldEvents {
   onDirty(): void;
 }
 
+// <math-field> can be registered only once per window. After the plugin is disabled and
+// re-enabled, it is still registered to the class from the first load, and constructing this
+// bundle's class throws "Illegal constructor" — so always use the registered one.
+export function registeredMathfield(): typeof MathfieldElement {
+  return (customElements.get("math-field") as typeof MathfieldElement | undefined) ?? MathfieldElement;
+}
+
 const configured = new WeakSet<MathfieldElement>();
 const initialValue = new WeakMap<MathfieldElement, string>();
 
 // A MathLive field that behaves like LyX: only \commands, ^ and _ do anything special.
 // Returned unmounted; configureAfterMount runs on the `mount` event (or call it yourself).
 export function createLyxMathField(display: boolean, initial: string, ev: LyxFieldEvents): MathfieldElement {
-  const mf = new MathfieldElement();
+  const mf = new (registeredMathfield())();
   mf.classList.add(display ? "lyx-math-block" : "lyx-math-inline");
   mf.mathVirtualKeyboardPolicy = "manual";
   mf.smartFence = false;

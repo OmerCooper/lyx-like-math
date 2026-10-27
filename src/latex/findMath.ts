@@ -1,3 +1,5 @@
+import { splitTag } from "./tag";
+
 export interface MathRange {
   from: number; // start of the opening delimiter
   to: number; // just past the closing delimiter
@@ -24,7 +26,7 @@ function fencedRanges(doc: string): [number, number][] {
 }
 
 // All formulas in the document, in order (Obsidian's delimiter rules).
-function scanMath(doc: string): MathRange[] {
+export function findAllMath(doc: string): MathRange[] {
   const result: MathRange[] = [];
   const fences = fencedRanges(doc);
   let f = 0;
@@ -86,12 +88,13 @@ function findInlineClose(doc: string, open: number): number {
 }
 
 export function findMathAt(doc: string, pos: number): MathRange | null {
-  return scanMath(doc).find((r) => r.from <= pos && pos < r.to) ?? null;
+  return findAllMath(doc).find((r) => r.from <= pos && pos < r.to) ?? null;
 }
 
 // Formulas the visual editor can't round-trip are left to plain-text editing.
 export function needsRawFallback(range: MathRange, validate: (latex: string) => unknown[]): boolean {
-  const latex = range.inner.trim();
+  // a plugin-managed number (\tag{3}) is split off; any other \tag is the user's own
+  const latex = splitTag(range.inner).body;
   if (/\\(begin|label|tag)\b/.test(latex) || latex.includes("\n")) return true;
   return validate(latex).length > 0;
 }
