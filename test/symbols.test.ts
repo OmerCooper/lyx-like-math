@@ -4,6 +4,14 @@ test("groups in LyX toolbar order", () => {
   expect(SYMBOL_GROUPS.map((g) => g.name)).toEqual(["Fractions & roots", "Accents", "Greek", "Operators",
     "Relations", "Arrows", "Big operators", "Delimiters", "Matrices", "Functions", "Misc"]);
 });
+test("matrices have add-row and add-column buttons", () => {
+  const m = SYMBOL_GROUPS.find((g) => g.name === "Matrices")!;
+  expect(m.actions!.map((a) => a.command)).toEqual(["addRowAfter", "addColumnAfter"]);
+});
+test("search finds the add-column button", () => {
+  const m = filterSymbols(SYMBOL_GROUPS, "column").find((g) => g.name === "Matrices")!;
+  expect(m.actions!.map((a) => a.command)).toEqual(["addColumnAfter"]);
+});
 test("matrices start as 2x2 with empty cells", () => {
   const m = SYMBOL_GROUPS.find((g) => g.name === "Matrices")!;
   expect(m.items[0]).toBe("\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}");

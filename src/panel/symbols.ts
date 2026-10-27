@@ -2,6 +2,14 @@
 export interface SymbolGroup {
   name: string;
   items: string[];
+  actions?: PanelAction[];
+}
+
+// A button that edits the formula instead of inserting LaTeX.
+export interface PanelAction {
+  label: string;
+  tooltip: string;
+  command: "addRowAfter" | "addColumnAfter";
 }
 
 export const SYMBOL_GROUPS: SymbolGroup[] = [
@@ -22,6 +30,9 @@ export const SYMBOL_GROUPS: SymbolGroup[] = [
     "\\begin{pmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{pmatrix}",
     "\\begin{bmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{bmatrix}",
     "\\begin{pmatrix}#?\\\\#?\\end{pmatrix}", "\\begin{pmatrix}#?\\\\#?\\\\#?\\end{pmatrix}",
+  ], actions: [
+    { label: "+ row", tooltip: "Add a row below (Ctrl+Enter)", command: "addRowAfter" },
+    { label: "+ column", tooltip: "Add a column to the right (Ctrl+Shift+Enter)", command: "addColumnAfter" },
   ] },
   { name: "Functions", items: ["\\sin", "\\cos", "\\tan", "\\arcsin", "\\arccos", "\\arctan", "\\sinh", "\\cosh", "\\log", "\\ln", "\\exp", "\\max", "\\min", "\\det", "\\dim", "\\ker"] },
   { name: "Misc", items: ["\\infty", "\\hbar", "\\ell", "\\forall", "\\exists", "\\emptyset", "\\Re", "\\Im", "\\aleph", "\\angle", "\\degree", "\\dots", "\\cdots", "\\vdots", "\\ddots", "\\prime"] },
@@ -33,10 +44,10 @@ export function filterSymbols(groups: SymbolGroup[], query: string): SymbolGroup
   if (!q) return groups;
   const hits: SymbolGroup[] = [];
   for (const g of groups) {
-    const items = g.name.toLowerCase().includes(q)
-      ? g.items
-      : g.items.filter((i) => i.toLowerCase().replace(/\\/g, "").includes(q));
-    if (items.length) hits.push({ name: g.name, items });
+    const whole = g.name.toLowerCase().includes(q);
+    const items = whole ? g.items : g.items.filter((i) => i.toLowerCase().replace(/\\/g, "").includes(q));
+    const actions = whole ? g.actions : g.actions?.filter((a) => a.label.toLowerCase().includes(q));
+    if (items.length || actions?.length) hits.push({ name: g.name, items, ...(actions?.length ? { actions } : {}) });
   }
   return hits;
 }

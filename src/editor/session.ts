@@ -52,6 +52,8 @@ export const mathSessionExtension: Extension = Prec.highest(widgetField);
 
 export class MathSession {
   static active: MathSession | null = null;
+  // told when an editor opens (true) or closes (false)
+  static onActiveChange: ((open: boolean) => void) | null = null;
 
   readonly field: MathfieldElement;
   private baseline = "";
@@ -84,6 +86,7 @@ export class MathSession {
     configureAfterMount(session.field);
     session.baseline = withoutPlaceholders(session.field.value);
     MathSession.active = session;
+    MathSession.onActiveChange?.(true);
     requestAnimationFrame(() => {
       session.field.focus();
       session.field.executeCommand("moveToMathfieldEnd");
@@ -94,7 +97,10 @@ export class MathSession {
   commit(exit: Exit): void {
     if (this.closed) return;
     this.closed = true;
-    if (MathSession.active === this) MathSession.active = null;
+    if (MathSession.active === this) {
+      MathSession.active = null;
+      MathSession.onActiveChange?.(false);
+    }
 
     const spec = this.view.state.field(widgetField);
     const target = spec ? { ...this.target, from: spec.from, to: spec.to } : this.target;

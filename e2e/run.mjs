@@ -41,6 +41,9 @@ export const CASES = [
   ["Ctrl+Enter outside a matrix does nothing", ["a", "Control+Enter", "b"], "ab"],
   ["Ctrl+Shift+Enter outside a matrix does nothing", ["a", "Control+Shift+Enter", "b"], "ab"],
   ["empty box is saved empty", ["\\frac", "1"], "\\frac{1}{}"],
+  ["dots shows as dots and is saved as \\dots", ["\\dots", "Space", "!render"], "\\dots"],
+  ["Ctrl+Enter handled by Obsidian's keymap adds one row", ["!appKeymap", "@" + PMATRIX, "a", "Control+Enter", "e"],
+    "\\begin{pmatrix}a & \\\\ e & \\\\  & \\end{pmatrix}"],
 ];
 
 const dist = path.resolve("e2e/dist");
@@ -61,17 +64,25 @@ let failed = 0;
 for (const [name, keys, expected] of CASES) {
   await page.evaluate(() => window.makeField(false, ""));
   await page.waitForTimeout(50);
+  let problem = "";
   for (const k of keys) {
-    if (k.startsWith("@")) await page.evaluate((l) => window.insertLatex(l), k.slice(1));
+    if (k === "!appKeymap") await page.evaluate(() => window.useAppKeymap());
+    else if (k === "!render") { await page.waitForTimeout(50); problem = await page.evaluate(() => window.rawCommandShown()); }
+    else if (k.startsWith("@")) await page.evaluate((l) => window.insertLatex(l), k.slice(1));
     else if (/^[A-Z][a-zA-Z+]+$/.test(k) && k !== "Z") await page.keyboard.press(k);
     else await page.keyboard.type(k, { delay: 10 });
   }
   await page.waitForTimeout(50);
   const got = await page.evaluate(() => window.fieldValue());
-  const ok = got === expected;
+  const ok = got === expected && !problem;
   if (!ok) failed++;
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}: ${JSON.stringify(got)}${ok ? "" : `  (expected ${JSON.stringify(expected)})`}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}: ${JSON.stringify(got)}` +
+    (ok ? "" : `  (expected ${JSON.stringify(expected)}) ${problem ? "shows " + problem : ""}`));
 }
+// every formula panel button renders as math, not as a raw \command
+const badButtons = await page.evaluate(() => window.badButtons());
+if (badButtons.length) failed++;
+console.log(`${badButtons.length ? "FAIL" : "PASS"}  panel buttons render: ${JSON.stringify(badButtons)}`);
 await browser.close();
-console.log(`${CASES.length - failed}/${CASES.length} passed`);
+console.log(`${CASES.length + 1 - failed}/${CASES.length + 1} passed`);
 process.exit(failed ? 1 : 0);

@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
+import { Editor, MarkdownView, Notice, Plugin, Scope } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import { validateLatex } from "mathlive";
 import { findMathAt, needsRawFallback } from "./latex/findMath";
@@ -7,6 +7,8 @@ import { MathSession, mathSessionExtension } from "./editor/session";
 import { showDisplayMenu } from "./editor/displayMenu";
 import { initMathLiveAssets } from "./mathliveAssets";
 import { FormulaPanelView, VIEW_TYPE_FORMULA_PANEL } from "./panel/FormulaPanelView";
+import type { PanelAction } from "./panel/symbols";
+import { matrixCommand } from "./editor/mathField";
 
 export const RAW_FALLBACK_NOTICE = "LyX-like Math: this formula is edited as LaTeX text";
 
@@ -29,8 +31,20 @@ export default class LyxMathPlugin extends Plugin {
       hotkeys: [{ modifiers: ["Mod", "Shift"], key: "m" }],
       editorCallback: (editor) => this.run(() => this.openAtCursor(editor, true)),
     });
-    this.registerView(VIEW_TYPE_FORMULA_PANEL, (leaf) =>
-      new FormulaPanelView(leaf, (latex) => this.run(() => this.insertFromPanel(latex))));
+    this.registerView(VIEW_TYPE_FORMULA_PANEL, (leaf) => new FormulaPanelView(leaf, {
+      insert: (latex) => this.run(() => this.insertFromPanel(latex)),
+      action: (command) => this.matrixAction(command),
+    }));
+
+    // Ctrl+Enter is an Obsidian hotkey (open link in new tab) that Obsidian handles before the math
+    // editor sees the key; while the editor is open, this scope takes Ctrl(+Shift)+Enter first.
+    const matrixKeys = new Scope(this.app.scope);
+    matrixKeys.register(["Mod"], "Enter", () => { this.matrixKey("addRowAfter"); return false; });
+    matrixKeys.register(["Mod", "Shift"], "Enter", () => { this.matrixKey("addColumnAfter"); return false; });
+    MathSession.onActiveChange = (open) => {
+      if (open) this.app.keymap.pushScope(matrixKeys);
+      else this.app.keymap.popScope(matrixKeys);
+    };
     this.addRibbonIcon("sigma", "Open LyX formula panel", () => this.run(() => this.openPanel()));
     this.addCommand({
       id: "open-formula-panel",
@@ -55,6 +69,22 @@ export default class LyxMathPlugin extends Plugin {
 
   onunload() {
     MathSession.active?.commit("none");
+    MathSession.onActiveChange = null;
+  }
+
+  private matrixKey(command: PanelAction["command"]): void {
+    const session = MathSession.active;
+    if (session && session.field.contains(document.activeElement)) matrixCommand(session.field, command);
+  }
+
+  // "+ row" / "+ column" panel buttons
+  private matrixAction(command: PanelAction["command"]): void {
+    const session = MathSession.active;
+    if (!session || !matrixCommand(session.field, command)) {
+      new Notice("LyX-like Math: put the cursor inside a matrix first");
+      return;
+    }
+    session.field.focus();
   }
 
   private async openPanel(): Promise<void> {

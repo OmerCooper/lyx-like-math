@@ -70,3 +70,7 @@ math-field::part(menu-toggle) {
   background: var(--background-modifier-hover);
   border-color: var(--interactive-accent);
 }
+.lyx-math-panel-action {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
