@@ -1,4 +1,5 @@
-import { Editor, MarkdownView, Notice, Plugin, Scope } from "obsidian";
+import { Editor, editorLivePreviewField, MarkdownView, Notice, Plugin, Scope } from "obsidian";
+import { clickToEditExtension } from "./editor/clickToEdit";
 import type { EditorView } from "@codemirror/view";
 import { validateLatex } from "mathlive";
 import { findMathAt, needsRawFallback } from "./latex/findMath";
@@ -18,6 +19,10 @@ export default class LyxMathPlugin extends Plugin {
   async onload() {
     initMathLiveAssets(this);
     this.registerEditorExtension(mathSessionExtension);
+    this.registerEditorExtension(clickToEditExtension(
+      (view) => view.state.field(editorLivePreviewField, false) ?? false,
+      () => new Notice(RAW_FALLBACK_NOTICE),
+    ));
 
     this.addCommand({
       id: "insert-inline",
