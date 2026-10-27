@@ -30,7 +30,8 @@ function readToken(s: string, i: number): Token | null {
     return { text: s.slice(i + 1, end - 1), end, group: true };
   }
   if (s[i] === "\\") {
-    const m = /^\\([a-zA-Z]+|.)/.exec(s.slice(i));
+    // starred forms (\operatorname*) are one command
+    const m = /^\\([a-zA-Z]+\*?|.)/.exec(s.slice(i));
     const len = m ? m[0].length : 1;
     return { text: s.slice(i, i + len), end: i + len, group: false };
   }
@@ -63,7 +64,7 @@ export function lyxBraces(latex: string): string {
       const tok = readToken(latex, i)!;
       out += tok.text;
       i = tok.end;
-      const name = tok.text.slice(1);
+      const name = tok.text.slice(1).replace(/\*$/, "");
       const count = ARG_COUNT[name];
       if (!count) continue;
       if (name === "sqrt") {

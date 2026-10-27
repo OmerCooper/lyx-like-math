@@ -1,5 +1,5 @@
 import { findAllMath } from "./findMath";
-export { splitTag } from "./tag";
+export { formulaParts, splitTag } from "./tag";
 
 // The number is a placeholder; renumberChanges gives it its real value.
 export function withTag(body: string, numbered: boolean): string {

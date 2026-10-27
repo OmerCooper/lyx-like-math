@@ -3,7 +3,7 @@ import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/v
 import { EditorState, RangeSetBuilder, StateField } from "@codemirror/state";
 import { editingRange, MathSession, mathSessionExtension } from "../src/editor/session";
 import { clickToEditExtension } from "../src/editor/clickToEdit";
-import { findAllMath } from "../src/latex/findMath";
+import { findAllMath, findMathAt } from "../src/latex/findMath";
 
 declare global {
   interface Window {
@@ -12,6 +12,11 @@ declare global {
     docText(): string;
     editing(): boolean;
     rawNotices: number;
+    lost: string[];
+    replaceState(doc: string): void;
+    externalChange(from: number, to: number, insert: string): void;
+    destroyView(): void;
+    insertTemplate(latex: string): void;
     errors: string[];
   }
 }
@@ -70,7 +75,9 @@ window.setDoc = (doc, cursor, lp = false) => {
 
 window.open = (from, to, display, initial, numbered) => {
   try {
-    return MathSession.open(view, { from, to, display }, initial, numbered) !== null;
+    // a range covering a formula opens that formula, as the plugin does
+    const existing = from < to ? findMathAt(view.state.doc.toString(), from) : null;
+    return MathSession.open(view, existing ?? { from, to, display }, initial, numbered) !== null;
   } catch (e) {
     window.errors.push(String((e as Error).stack ?? e));
     return false;
@@ -79,3 +86,14 @@ window.open = (from, to, display, initial, numbered) => {
 
 window.docText = () => view.state.doc.toString();
 window.editing = () => MathSession.active !== null;
+
+// formulas the plugin couldn't write back (it copies them to the clipboard in Obsidian)
+window.lost = [];
+MathSession.onLost = (latex) => window.lost.push(latex);
+// another note loaded into the same editor
+window.replaceState = (doc) => view.setState(EditorState.create({ doc, extensions: [mathSessionExtension] }));
+// a change from outside (sync, another plugin)
+window.externalChange = (from, to, insert) => view.dispatch({ changes: { from, to, insert } });
+window.destroyView = () => view.destroy();
+// what a formula panel button does
+window.insertTemplate = (latex) => MathSession.active?.insertTemplate(latex);

@@ -6,3 +6,11 @@ export function splitTag(inner: string): { body: string; tag: number | null } {
   if (!m) return { body: inner.trim(), tag: null };
   return { body: (inner.slice(0, m.index) + " " + inner.slice(m.index + m[0].length)).trim(), tag: Number(m[1]) };
 }
+
+// What the math editor opens with: a display equation's number is split off (and kept);
+// inline math has no plugin number, so any \tag stays part of the formula.
+export function formulaParts(range: { inner: string; display: boolean }): { body: string; numbered: boolean } {
+  if (!range.display) return { body: range.inner.trim(), numbered: false };
+  const { body, tag } = splitTag(range.inner);
+  return { body, numbered: tag !== null };
+}
