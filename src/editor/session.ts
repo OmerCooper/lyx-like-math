@@ -1,5 +1,5 @@
 import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/view";
-import { Extension, Prec, StateEffect, StateField } from "@codemirror/state";
+import { EditorState, Extension, Prec, StateEffect, StateField } from "@codemirror/state";
 import type { MathfieldElement } from "mathlive";
 import { CommitInput, planCommit } from "../latex/commit";
 import { withoutPlaceholders } from "../latex/braces";
@@ -126,4 +126,10 @@ export class MathSession {
     );
     if (exit !== "none") this.view.focus();
   }
+}
+
+// The note range the open math editor replaces, if one is open in this editor.
+export function editingRange(state: EditorState): { from: number; to: number } | null {
+  const spec = state.field(widgetField, false);
+  return spec ? { from: spec.from, to: spec.to } : null;
 }
