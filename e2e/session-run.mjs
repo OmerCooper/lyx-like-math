@@ -10,7 +10,7 @@ const CASES = [
   ["inline new", "ab", 1, false, false, ["x", "Escape"], "a$x$b"],
   ["display new", "", 0, true, false, ["y", "Escape"], "$$\ny\n$$"],
   ["numbered new", "", 0, true, true, ["y", "Escape"], "$$\ny \\tag{1}\n$$"],
-  ["numbered between two", "$$\na \\tag{1}\n$$\n\n$$\nb \\tag{2}\n$$", 15, true, true, ["c", "Escape"],
+  ["numbered between two", "$$\na \\tag{1}\n$$\n\n$$\nb \\tag{2}\n$$", 16, true, true, ["c", "Escape"],
     "$$\na \\tag{1}\n$$\n$$\nc \\tag{2}\n$$\n$$\nb \\tag{3}\n$$"],
   ["empty numbered is removed", "", 0, true, true, ["Escape"], ""],
 ];
