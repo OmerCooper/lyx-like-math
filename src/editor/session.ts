@@ -2,6 +2,7 @@ import { Decoration, DecorationSet, EditorView, WidgetType } from "@codemirror/v
 import { Extension, Prec, StateEffect, StateField } from "@codemirror/state";
 import type { MathfieldElement } from "mathlive";
 import { CommitInput, planCommit } from "../latex/commit";
+import { renumberChanges, splitTag, withTag } from "../latex/numbering";
 import { configureAfterMount, createLyxMathField } from "./mathField";
 
 type Target = CommitInput["target"];
@@ -55,7 +56,12 @@ export class MathSession {
   private baseline = "";
   private closed = false;
 
-  private constructor(private view: EditorView, private target: Target, initial: string) {
+  private constructor(
+    private view: EditorView,
+    private target: Target,
+    initial: string,
+    private numbered: boolean,
+  ) {
     this.field = createLyxMathField(target.display, initial, {
       onExit: (dir) => this.commit(dir),
       // focus leaving the window (alt-tab) is not leaving the formula
@@ -64,9 +70,10 @@ export class MathSession {
     });
   }
 
-  static open(view: EditorView, target: Target, initial: string): MathSession | null {
+  // `initial` is the formula without its number; `numbered` is whether it gets one.
+  static open(view: EditorView, target: Target, initial: string, numbered = false): MathSession | null {
     MathSession.active?.commit("none");
-    const session = new MathSession(view, target, initial);
+    const session = new MathSession(view, target, initial, numbered);
     const widget = new MathFieldWidget(session.field, target.display);
     view.dispatch({ effects: setWidget.of({ from: target.from, to: target.to, widget }) });
     if (!session.field.isConnected) {
@@ -91,16 +98,25 @@ export class MathSession {
     const spec = this.view.state.field(widgetField);
     const target = spec ? { ...this.target, from: spec.from, to: spec.to } : this.target;
     const doc = this.view.state.doc.toString();
-    const latex = this.field.value;
-    const plan = planCommit({ doc, target, latex, dirty: latex !== this.baseline, exit });
+    const body = this.field.value;
+    const wasNumbered = target.inner !== undefined && splitTag(target.inner).tag !== null;
+    const dirty = body !== this.baseline || this.numbered !== wasNumbered;
+    // an empty formula is deleted, number and all
+    const latex = body.trim() ? withTag(body, this.numbered) : "";
+    const plan = planCommit({ doc, target, latex, dirty, exit });
     const changed = plan.insert !== doc.slice(plan.from, plan.to);
+    const newDoc = doc.slice(0, plan.from) + plan.insert + doc.slice(plan.to);
 
-    this.view.dispatch({
-      changes: changed ? { from: plan.from, to: plan.to, insert: plan.insert } : undefined,
-      selection: plan.cursor !== null ? { anchor: plan.cursor } : undefined,
-      effects: setWidget.of(null),
-      userEvent: "input.lyx-math",
-    });
+    // one transaction (one undo step): the formula, then renumbering of the whole note
+    this.view.dispatch(
+      {
+        changes: changed ? { from: plan.from, to: plan.to, insert: plan.insert } : undefined,
+        selection: plan.cursor !== null ? { anchor: plan.cursor } : undefined,
+        effects: setWidget.of(null),
+        userEvent: "input.lyx-math",
+      },
+      { changes: renumberChanges(newDoc), sequential: true },
+    );
     if (exit !== "none") this.view.focus();
   }
 }
