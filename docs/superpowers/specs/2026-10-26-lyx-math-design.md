@@ -138,3 +138,16 @@ without thinking about LaTeX syntax, and the notes stay plain Markdown + LaTeX.
 - Manual checklist in Lab Vault: Ctrl+M / Ctrl+Shift+M, `\frac`+Space, `\Delta`+Space, `\cdot`+Space,
   `\alpha^2`, Esc and arrow exit, click to re-edit old formula, undo, saved text has braces.
 - Unit tests for the pure parts (brace restoration, finding the `$...$` range at a cursor position).
+
+## Addendum 2026-10-27: Equation numbering (approved by user in chat)
+
+- **Ctrl+Shift+M** first shows a small menu at the cursor: **Display math** / **Numbered display math**
+  (first highlighted; arrows + Enter or click; Esc cancels). Then the editor opens.
+- Numbered equations are saved as `$$\n<body> \tag{n}\n$$`. Every commit through the plugin renumbers all
+  numerically tagged display equations in the note 1, 2, 3… in document order (one undo step).
+- Command **Renumber equations** does the same on demand (after manual edits).
+- Only `\tag{<digits>}` is managed; `\tag{*}`, `\tag{A}` are left alone and not counted.
+- Ctrl+Shift+M on an existing display equation shows the menu with its current choice checked
+  (lets you add/remove the number). Clicking / Ctrl+M opens it directly, keeping its number.
+- The tag is not shown inside the editor; it is split off on open and re-added on commit.
+- A numeric `\tag` no longer triggers the raw-text fallback (supersedes that bullet for numeric tags).
