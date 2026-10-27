@@ -1,0 +1,9 @@
+{
+  "id": "lyx-math",
+  "name": "LyX Math",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "LyX-style WYSIWYG math: Ctrl+M inline, Ctrl+Shift+M display, Space finishes commands, formula panel.",
+  "author": "Omer Cooper",
+  "isDesktopOnly": true
+}
