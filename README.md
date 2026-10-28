@@ -5,8 +5,8 @@ formula as rendered math, `\commands` finish with Space, and wrappers like `\fra
 give you empty boxes to fill. Notes stay plain Markdown: formulas are saved as ordinary
 `$...$` and `$$...$$` LaTeX, which Obsidian renders as usual.
 
-Desktop only. The math editor is [MathLive](https://cortexjs.io/mathlive/) 0.101.0, bundled with
-its fonts, so it works offline.
+Desktop only. The math editor is [MathLive](https://cortexjs.io/mathlive/) 0.101.0 (MIT), bundled
+with its fonts, so it works offline.
 
 ## Keys
 
@@ -54,27 +54,38 @@ Clicking a button inserts into the open editor with the cursor in the first empt
 editor open, it starts inline math at the note's cursor. The Matrices group also has **+ row**
 and **+ column** buttons.
 
-## Install (from source)
+## Install
+
+**From Obsidian** (once the plugin is listed): Settings → Community plugins → Browse → search
+for **LyX-like Math** → Install → Enable.
+
+**Manually:** download `main.js`, `manifest.json` and `styles.css` from the
+[latest release](https://github.com/OmerCooper/lyx-like-math/releases/latest), put them in
+`<your vault>/.obsidian/plugins/lyx-like-math/`, then in Obsidian: Settings → Community plugins
+→ reload the list and enable **LyX-like Math**. The math fonts are inside `styles.css`; nothing
+is downloaded at run time.
+
+**With [BRAT](https://github.com/TfTHacker/obsidian42-brat):** add the beta plugin
+`OmerCooper/lyx-like-math`.
+
+Ctrl+M and Ctrl+Shift+M can be changed under Settings → Hotkeys (search "math").
+
+## Development
 
 Needs Node.js 18 or later.
 
 ```sh
 npm install
-npm run build       # main.js
-npm run deploy      # build + copy to your vault (folder in deploy-target.txt, see scripts/deploy.mjs)
-```
-
-Then in Obsidian: Settings → Community plugins → enable **LyX-like Math**. To install into
-another vault, copy `main.js`, `manifest.json`, `styles.css` and
-`node_modules/mathlive/dist/fonts/` (as `fonts/`) into `<vault>/.obsidian/plugins/lyx-like-math/`.
-
-## Development
-
-```sh
+npm run build       # main.js and styles.css
+npm run deploy      # build + copy to your vault: put the plugin folder path in deploy-target.txt
 npm test            # unit tests (vitest)
 npm run e2e         # browser tests: real MathLive and CodeMirror in local Chrome (playwright-core)
 npm run dev         # rebuild on change
 ```
+
+To release: bump the version in `manifest.json`, `package.json` and `versions.json`, commit, then
+push a tag with the same version (`git tag 0.2.0 && git push origin 0.2.0`). GitHub Actions
+builds and publishes the release.
 
 Design and plan: `docs/superpowers/specs/2026-10-26-lyx-math-design.md`,
 `docs/superpowers/plans/2026-10-27-lyx-math.md`.

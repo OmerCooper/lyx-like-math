@@ -3,7 +3,8 @@
   "name": "LyX-like Math",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "LyX-style WYSIWYG math: Ctrl+M inline, Ctrl+Shift+M display, Space finishes commands, formula panel.",
+  "description": "Type math like in LyX: edit formulas as rendered math, finish commands with Space, fill empty boxes, and number equations.",
   "author": "Omer Cooper",
+  "authorUrl": "https://github.com/OmerCooper",
   "isDesktopOnly": true
 }

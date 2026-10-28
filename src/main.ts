@@ -17,7 +17,7 @@ export default class LyxMathPlugin extends Plugin {
   private lastMarkdown: MarkdownView | null = null;
 
   async onload() {
-    initMathLiveAssets(this);
+    initMathLiveAssets();
     this.registerEditorExtension(mathSessionExtension);
     this.registerEditorExtension(clickToEditExtension(
       (view) => view.state.field(editorLivePreviewField, false) ?? false,

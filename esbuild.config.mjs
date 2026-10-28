@@ -1,8 +1,11 @@
 import esbuild from "esbuild";
+import { writeStyles } from "./scripts/styles.mjs";
 import process from "process";
 import builtins from "builtin-modules";
 
 const prod = process.argv[2] === "production";
+
+writeStyles();
 
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
@@ -29,8 +32,6 @@ const context = await esbuild.context({
   sourcemap: prod ? false : "inline",
   treeShaking: true,
   outfile: "main.js",
-  // MathLive stylesheets are injected at runtime as strings
-  loader: { ".css": "text" },
 });
 
 if (prod) {

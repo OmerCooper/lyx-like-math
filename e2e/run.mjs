@@ -52,12 +52,15 @@ await esbuild.build({
   entryPoints: ["e2e/harness.ts"], bundle: true, format: "iife", outfile: path.join(dist, "harness.js"),
   loader: { ".css": "text" }, logLevel: "error",
 });
-fs.writeFileSync(path.join(dist, "harness.html"),
-  '<!doctype html><meta charset="utf-8"><body><script src="harness.js"></script></body>');
+// the plugin's built styles.css (npm run build), as Obsidian loads it
+fs.writeFileSync(path.join(dist, "harness.html"), '<!doctype html><meta charset="utf-8">' +
+  '<link rel="stylesheet" href="../../styles.css"><body><script src="harness.js"></script></body>');
 
 const executablePath = BROWSERS.find((p) => fs.existsSync(p));
 const browser = await chromium.launch({ executablePath, headless: true });
 const page = await browser.newPage();
+const fontRequests = [];
+page.on("request", (r) => { if (/woff2?$|\/fonts\//.test(r.url())) fontRequests.push(r.url()); });
 await page.goto("file:///" + path.join(dist, "harness.html").replace(/\\/g, "/"));
 
 let failed = 0;
@@ -83,6 +86,11 @@ for (const [name, keys, expected] of CASES) {
 const badButtons = await page.evaluate(() => window.badButtons());
 if (badButtons.length) failed++;
 console.log(`${badButtons.length ? "FAIL" : "PASS"}  panel buttons render: ${JSON.stringify(badButtons)}`);
+// fonts come from styles.css: loaded, and nothing downloaded
+const fontsLoaded = await page.evaluate(() => window.mathFontsLoaded());
+const fontsOk = fontsLoaded && fontRequests.length === 0;
+if (!fontsOk) failed++;
+console.log(`${fontsOk ? "PASS" : "FAIL"}  math fonts load from styles.css: loaded=${fontsLoaded} downloads=${JSON.stringify(fontRequests)}`);
 await browser.close();
-console.log(`${CASES.length + 1 - failed}/${CASES.length + 1} passed`);
+console.log(`${CASES.length + 2 - failed}/${CASES.length + 2} passed`);
 process.exit(failed ? 1 : 0);

@@ -41,7 +41,8 @@ export class FormulaPanelView extends ItemView {
       const box = details.createDiv({ cls: "lyx-math-panel-buttons" });
       for (const latex of group.items) {
         const button = this.button(box, latex.replace(/#\?/g, "□"), () => this.handlers.insert(latex));
-        button.innerHTML = buttonMarkup(latex);
+        const markup = new DOMParser().parseFromString(buttonMarkup(latex), "text/html");
+        button.replaceChildren(...Array.from(markup.body.childNodes));
       }
       for (const action of group.actions ?? []) {
         const button = this.button(box, action.tooltip, () => this.handlers.action(action.command));

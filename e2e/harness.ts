@@ -4,6 +4,7 @@ import { lyxBraces, withoutPlaceholders } from "../src/latex/braces";
 import { buttonMarkup } from "../src/panel/render";
 import { SYMBOL_GROUPS } from "../src/panel/symbols";
 import type { MathfieldElement } from "mathlive";
+import { initMathLiveAssets } from "../src/mathliveAssets";
 
 declare global {
   interface Window {
@@ -13,6 +14,7 @@ declare global {
     useAppKeymap(): void;
     rawCommandShown(): string;
     badButtons(): string[];
+    mathFontsLoaded(): Promise<boolean>;
     exits: string[];
   }
 }
@@ -66,3 +68,12 @@ window.badButtons = () => SYMBOL_GROUPS.flatMap((g) => g.items).filter((latex) =
   div.innerHTML = buttonMarkup(latex);
   return rawCommand(div) !== "";
 });
+
+// MathLive's fonts as the plugin ships them: embedded in styles.css, never fetched
+initMathLiveAssets();
+window.mathFontsLoaded = async () => {
+  await document.fonts.ready;
+  const katex = Array.from(document.fonts).filter((f) => f.family.replace(/"/g, "").startsWith("KaTeX_"));
+  await Promise.all(katex.map((f) => f.load().catch(() => f)));
+  return katex.length === 20 && katex.every((f) => f.status === "loaded");
+};
