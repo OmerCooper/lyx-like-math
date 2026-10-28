@@ -1,6 +1,6 @@
 {
   "name": "obsidian-lyx-like-math",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "LyX-style WYSIWYG math editing for Obsidian",
   "main": "main.js",
   "private": true,
