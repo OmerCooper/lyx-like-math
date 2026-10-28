@@ -1,6 +1,7 @@
 import { MathfieldElement } from "mathlive";
 import { commandTemplate, typedCommand } from "../latex/commands";
 import { latexModeKeyAction } from "./keys";
+import { EXTRA_MACROS } from "../latex/macros";
 
 export interface LyxFieldEvents {
   onExit(dir: "after" | "before"): void;
@@ -105,9 +106,6 @@ export function matrixCommand(mf: MathfieldElement, command: "addRowAfter" | "ad
   return true;
 }
 
-// Commands Obsidian's MathJax knows but MathLive 0.101 doesn't; shown as their equivalent,
-// saved as typed.
-export const EXTRA_MACROS = { dots: "\\ldots" };
 
 // MathLive leaves a typed "\" selected when it replaces a selected empty box, so the next
 // letter overwrites it; put the cursor in the box instead so "\" starts a command cleanly.

@@ -3,7 +3,7 @@ import { clickToEditExtension } from "./editor/clickToEdit";
 import type { EditorView } from "@codemirror/view";
 import { validateLatex } from "mathlive";
 import { findMathAt, needsRawFallback } from "./latex/findMath";
-import { renumberChanges, splitTag } from "./latex/numbering";
+import { formulaParts, renumberChanges } from "./latex/numbering";
 import { MathSession, mathSessionExtension } from "./editor/session";
 import { showDisplayMenu } from "./editor/displayMenu";
 import { initMathLiveAssets } from "./mathliveAssets";
@@ -50,6 +50,11 @@ export default class LyxMathPlugin extends Plugin {
       if (open) this.app.keymap.pushScope(matrixKeys);
       else this.app.keymap.popScope(matrixKeys);
     };
+    // a formula that couldn't be written back (its note changed or closed) isn't thrown away
+    MathSession.onLost = (latex) => {
+      void navigator.clipboard.writeText(latex).catch(() => {});
+      new Notice(`LyX-like Math: the note changed while you were editing, so your formula was not saved. It is on the clipboard:\n${latex}`, 15000);
+    };
     this.addRibbonIcon("sigma", "Open LyX formula panel", () => this.run(() => this.openPanel()));
     this.addCommand({
       id: "open-formula-panel",
@@ -75,6 +80,7 @@ export default class LyxMathPlugin extends Plugin {
   onunload() {
     MathSession.active?.commit("none");
     MathSession.onActiveChange = null;
+    MathSession.onLost = null;
   }
 
   private matrixKey(command: PanelAction["command"]): void {
@@ -116,8 +122,7 @@ export default class LyxMathPlugin extends Plugin {
       session = await this.openAtCursor(note.editor, false);
       if (!session) return;
     }
-    session.field.insert(latex, { selectionMode: "placeholder", format: "latex" });
-    session.field.focus();
+    session.insertTemplate(latex);
   }
 
   // Errors become a visible notice (and the console), not a silent no-op.
@@ -134,6 +139,9 @@ export default class LyxMathPlugin extends Plugin {
   // Display math (Ctrl+Shift+M) first asks: plain or numbered.
   async openAtCursor(editor: Editor, display: boolean): Promise<MathSession | null> {
     const view = cmView(editor);
+    // a math editor already open (Ctrl+M pressed inside it) is written back first, so the
+    // positions below are of the note as it now is
+    MathSession.active?.commit("none");
     const doc = view.state.doc.toString();
     const sel = view.state.selection.main;
     const existing = findMathAt(doc, sel.head);
@@ -142,8 +150,9 @@ export default class LyxMathPlugin extends Plugin {
         new Notice(RAW_FALLBACK_NOTICE);
         return null;
       }
-      const { body, tag } = splitTag(existing.inner);
-      let numbered = tag !== null;
+      const parts = formulaParts(existing);
+      const body = parts.body;
+      let numbered = parts.numbered;
       if (display && existing.display) {
         const choice = await showDisplayMenu(view, numbered);
         if (choice === null) return null;

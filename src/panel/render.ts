@@ -1,5 +1,5 @@
 import { convertLatexToMarkup } from "mathlive";
-import { EXTRA_MACROS } from "../editor/mathField";
+import { EXTRA_MACROS } from "../latex/macros";
 
 // A panel button's picture: empty boxes ("#?") drawn as squares.
 export function buttonMarkup(latex: string): string {

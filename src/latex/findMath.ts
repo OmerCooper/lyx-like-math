@@ -1,4 +1,5 @@
-import { splitTag } from "./tag";
+import { formulaParts } from "./tag";
+import { withMacrosExpanded } from "./macros";
 
 export interface MathRange {
   from: number; // start of the opening delimiter
@@ -93,10 +94,10 @@ export function findMathAt(doc: string, pos: number): MathRange | null {
 
 // Formulas the visual editor can't round-trip are left to plain-text editing.
 export function needsRawFallback(range: MathRange, validate: (latex: string) => unknown[]): boolean {
-  // a plugin-managed number (\tag{3}) is split off; any other \tag is the user's own
-  const latex = splitTag(range.inner).body;
+  // a display equation's plugin number (\tag{3}) is split off; any other \tag is the user's own
+  const latex = formulaParts(range).body;
   // matrices (from the formula panel) are edited in the math editor; other environments are not
   const rest = latex.replace(/\\(begin|end)\{[pbBvV]?matrix\}/g, "");
   if (/\\(begin|label|tag)\b/.test(rest) || latex.includes("\n")) return true;
-  return validate(latex).length > 0;
+  return validate(withMacrosExpanded(latex)).length > 0;
 }

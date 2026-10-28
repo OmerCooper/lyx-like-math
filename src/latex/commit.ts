@@ -24,15 +24,20 @@ export function planCommit({ doc, target, latex, dirty, exit }: CommitInput): Co
 
   const body = lyxBraces(latex.trim());
   if (!body) {
-    if (target.display) {
+    // a display formula on lines of its own takes one line break with it
+    const ownLines = (from === 0 || doc[from - 1] === "\n") && (to === doc.length || doc[to] === "\n");
+    if (target.display && target.inner !== undefined && ownLines) {
       if (doc[to] === "\n") to++;
-      else if (from > 0 && doc[from - 1] === "\n") from--;
+      else if (from > 0) from--;
     }
     return { from, to, insert: "", cursor: exit === "none" ? null : from };
   }
 
-  if (!target.display) {
-    const insert = `$${body}$`;
+  // in a callout, quote or list item, display math stays on the line so it stays inside
+  const lineStart = doc.lastIndexOf("\n", from - 1) + 1;
+  const contained = /^\s*(>|[-*+]\s|\d+[.)]\s)/.test(doc.slice(lineStart, from));
+  if (!target.display || contained) {
+    const insert = target.display ? `$$${body}$$` : `$${body}$`;
     return { from, to, insert, cursor: cursorAt(from, from + insert.length) };
   }
 

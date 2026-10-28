@@ -2,7 +2,7 @@ import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
 import { validateLatex } from "mathlive";
 import { findMathAt, needsRawFallback } from "../latex/findMath";
-import { splitTag } from "../latex/numbering";
+import { formulaParts } from "../latex/numbering";
 import { MathSession } from "./session";
 
 // Clicking a rendered formula in Live Preview opens it in the math editor, keeping its number.
@@ -29,8 +29,8 @@ export function clickToEditExtension(isLivePreview: (view: EditorView) => boolea
       }
       event.preventDefault();
       event.stopPropagation();
-      const { body, tag } = splitTag(range.inner);
-      MathSession.open(view, range, body.trim(), tag !== null);
+      const { body, numbered } = formulaParts(range);
+      MathSession.open(view, range, body, numbered);
     };
     view.contentDOM.addEventListener("mousedown", onMouseDown, true);
     return { destroy: () => view.contentDOM.removeEventListener("mousedown", onMouseDown, true) };
