@@ -4,3 +4,4 @@ main.js
 .superpowers/
 data.json
 e2e/dist/
+deploy-target.txt

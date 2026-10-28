@@ -61,7 +61,7 @@ Needs Node.js 18 or later.
 ```sh
 npm install
 npm run build       # main.js
-npm run deploy      # build + copy to the Lab Vault plugin folder (path in scripts/deploy.mjs)
+npm run deploy      # build + copy to your vault (folder in deploy-target.txt, see scripts/deploy.mjs)
 ```
 
 Then in Obsidian: Settings → Community plugins → enable **LyX-like Math**. To install into
