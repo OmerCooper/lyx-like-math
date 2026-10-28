@@ -11,7 +11,18 @@ import { MathSession } from "./session";
 // tell CodeMirror to ignore their events.
 export function clickToEditExtension(isLivePreview: (view: EditorView) => boolean, onRaw: () => void): Extension {
   return ViewPlugin.define((view) => {
+    // The mouseup and click of a press that opened the editor are ours too: given to the rendered
+    // formula, Obsidian would put the cursor in its source and take the focus back (the editor
+    // would close at once).
+    let swallowRest = false;
+    const onRest = (event: MouseEvent) => {
+      if (!swallowRest) return;
+      if (event.type === "click") swallowRest = false;
+      event.preventDefault();
+      event.stopPropagation();
+    };
     const onMouseDown = (event: MouseEvent) => {
+      swallowRest = false;
       if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
       const target = event.target as HTMLElement | null;
       const mathEl = target?.closest?.(".math");
@@ -30,9 +41,15 @@ export function clickToEditExtension(isLivePreview: (view: EditorView) => boolea
       event.preventDefault();
       event.stopPropagation();
       const { body, numbered } = formulaParts(range);
-      MathSession.open(view, range, body, numbered);
+      swallowRest = MathSession.open(view, range, body, numbered) !== null;
     };
     view.contentDOM.addEventListener("mousedown", onMouseDown, true);
-    return { destroy: () => view.contentDOM.removeEventListener("mousedown", onMouseDown, true) };
+    for (const type of ["mouseup", "click", "dblclick"] as const) view.contentDOM.addEventListener(type, onRest, true);
+    return {
+      destroy: () => {
+        view.contentDOM.removeEventListener("mousedown", onMouseDown, true);
+        for (const type of ["mouseup", "click", "dblclick"] as const) view.contentDOM.removeEventListener(type, onRest, true);
+      },
+    };
   });
 }
