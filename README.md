@@ -5,6 +5,9 @@ formula as rendered math, `\commands` finish with Space, and wrappers like `\fra
 give you empty boxes to fill. Notes stay plain Markdown: formulas are saved as ordinary
 `$...$` and `$$...$$` LaTeX, which Obsidian renders as usual.
 
+> This plugin was created by AI ([Claude Code](https://claude.com/claude-code)), directed and
+> tested by Omer Cooper.
+
 Desktop only. The math editor is [MathLive](https://cortexjs.io/mathlive/) 0.101.0 (MIT), bundled
 with its fonts, so it works offline.
 
