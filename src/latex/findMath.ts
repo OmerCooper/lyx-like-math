@@ -96,8 +96,9 @@ export function findMathAt(doc: string, pos: number): MathRange | null {
 export function needsRawFallback(range: MathRange, validate: (latex: string) => unknown[]): boolean {
   // a display equation's plugin number (\tag{3}) is split off; any other \tag is the user's own
   const latex = formulaParts(range).body;
-  // matrices (from the formula panel) are edited in the math editor; other environments are not
-  const rest = latex.replace(/\\(begin|end)\{[pbBvV]?matrix\}/g, "");
-  if (/\\(begin|label|tag)\b/.test(rest) || latex.includes("\n")) return true;
+  // matrices (from the formula panel) are edited in the math editor; other environments are not.
+  // A line break in the source is a space in LaTeX; \\ outside a matrix is a multi-line formula.
+  const rest = latex.replace(/\\begin\{([pbBvV]?matrix)\}[\s\S]*?\\end\{\1\}/g, "");
+  if (/\\(begin|label|tag)\b|\\\\/.test(rest)) return true;
   return validate(withMacrosExpanded(latex)).length > 0;
 }

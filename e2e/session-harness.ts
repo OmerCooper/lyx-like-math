@@ -32,10 +32,16 @@ let livePreview = false;
 class FakeMath extends WidgetType {
   constructor(readonly text: string, readonly display: boolean) { super(); }
   eq(other: FakeMath) { return other.text === this.text; }
-  toDOM() {
+  toDOM(view: EditorView) {
     const el = document.createElement(this.display ? "div" : "span");
     el.className = this.display ? "math math-block cm-embed-block" : "math math-inline";
     el.textContent = this.text;
+    // as Obsidian does: a click on rendered math puts the cursor in its source, a moment later
+    el.addEventListener("click", () => setTimeout(() => {
+      const pos = view.posAtDOM(el);
+      view.dispatch({ selection: { anchor: Math.min(pos + 1, view.state.doc.length) } });
+      view.focus();
+    }, 20));
     return el;
   }
   ignoreEvent() { return true; }
