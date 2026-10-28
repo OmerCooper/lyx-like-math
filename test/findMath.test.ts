@@ -47,6 +47,17 @@ test("findAllMath lists formulas in order", () => {
 test("fallback when validator reports errors", () => {
   expect(needsRawFallback(r("\\mymacro x"), () => [{ code: "unknown-command" }])).toBe(true);
 });
+test("a formula wrapped onto several source lines (a line break is a space in LaTeX) is edited", () => {
+  const inner = "\nM^{*}(s)=argmin_{m\\geq0} <[D_{func}(G,G'|s)-\\Delta g^{T} \\cdot M \\cdot \\Delta g]^{2}>_{G,G'}\n" +
+    "+\\alpha ||M||_{2} \\tag{1}\n";
+  expect(needsRawFallback(r(inner, true), ok)).toBe(false);
+});
+test("a matrix written over several lines is edited", () => {
+  expect(needsRawFallback(r("\n\\begin{pmatrix}a & b\\\\\nc & d\\end{pmatrix}\n", true), ok)).toBe(false);
+});
+test("\\\\ outside a matrix (a multi-line formula) stays raw text", () => {
+  expect(needsRawFallback(r("\\begin{pmatrix}a\\\\b\\end{pmatrix} = c \\\\ d", true), ok)).toBe(true);
+});
 test("display block with surrounding newlines is fine", () => {
   expect(needsRawFallback(r("\n\\frac{a}{b}\n", true), ok)).toBe(false);
 });
