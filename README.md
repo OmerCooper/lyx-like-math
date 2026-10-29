@@ -57,6 +57,13 @@ Clicking a button inserts into the open editor with the cursor in the first empt
 editor open, it starts inline math at the note's cursor. The Matrices group also has **+ row**
 and **+ column** buttons.
 
+## Settings
+
+**Copy unsaved formulas to the clipboard** (on by default): if the note changes while you are
+editing a formula (it syncs, or its tab is closed), the formula can't be saved into it. It is
+always shown in a message; with this on, it is also copied to the clipboard so you can paste it
+back. This is the only clipboard access by the plugin, and it never reads the clipboard.
+
 ## Install
 
 **From Obsidian** (once the plugin is listed): Settings → Community plugins → Browse → search

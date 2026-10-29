@@ -10,13 +10,17 @@ import { initMathLiveAssets } from "./mathliveAssets";
 import { FormulaPanelView, VIEW_TYPE_FORMULA_PANEL } from "./panel/FormulaPanelView";
 import type { PanelAction } from "./panel/symbols";
 import { focusField, matrixCommand } from "./editor/mathField";
+import { DEFAULT_SETTINGS, LyxMathSettings, LyxMathSettingTab } from "./settings";
 
 export const RAW_FALLBACK_NOTICE = "LyX-like Math: this formula is edited as LaTeX text";
 
 export default class LyxMathPlugin extends Plugin {
   private lastMarkdown: MarkdownView | null = null;
+  settings: LyxMathSettings = { ...DEFAULT_SETTINGS };
 
   async onload() {
+    this.settings = { ...DEFAULT_SETTINGS, ...((await this.loadData()) as Partial<LyxMathSettings> | null) };
+    this.addSettingTab(new LyxMathSettingTab(this.app, this, this.settings, () => this.saveData(this.settings)));
     initMathLiveAssets();
     this.registerEditorExtension(mathSessionExtension);
     this.registerEditorExtension(clickToEditExtension(
@@ -52,8 +56,10 @@ export default class LyxMathPlugin extends Plugin {
     };
     // a formula that couldn't be written back (its note changed or closed) isn't thrown away
     MathSession.onLost = (latex) => {
-      void navigator.clipboard.writeText(latex).catch(() => {});
-      new Notice(`LyX-like Math: the note changed while you were editing, so your formula was not saved. It is on the clipboard:\n${latex}`, 15000);
+      const copy = this.settings.copyUnsavedToClipboard;
+      if (copy) void navigator.clipboard.writeText(latex).catch(() => {});
+      new Notice("LyX-like Math: the note changed while you were editing, so your formula was not saved. " +
+        `${copy ? "It is on the clipboard" : "Here it is"}:\n${latex}`, 15000);
     };
     this.addRibbonIcon("sigma", "Open LyX formula panel", () => this.run(() => this.openPanel()));
     this.addCommand({
