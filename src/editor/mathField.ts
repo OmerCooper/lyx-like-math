@@ -72,6 +72,7 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
 
   mf.addEventListener("move-out", (e) => {
     e.preventDefault();
+    if (tabbing.has(mf)) return;
     ev.onExit((e as CustomEvent<{ direction: string }>).detail.direction === "backward" ? "before" : "after");
   });
   mf.addEventListener("focusout", () => ev.onBlur());
@@ -90,9 +91,17 @@ function finishCommand(mf: MathfieldElement): void {
 
 // LyX Tab: go to the next empty box if there is one ahead, otherwise leave the current box.
 // (MathLive's Tab selects the whole formula when no box is left, so the next key replaces it.)
+// (With no box ahead, MathLive's moveToNextPlaceholder sends move-out, which would leave the
+// formula; `tabbing` keeps the editor open for moveAfterParent.)
+const tabbing = new WeakSet<MathfieldElement>();
 function lyxTab(mf: MathfieldElement): void {
   const before = mf.position;
-  mf.executeCommand("moveToNextPlaceholder");
+  tabbing.add(mf);
+  try {
+    mf.executeCommand("moveToNextPlaceholder");
+  } finally {
+    tabbing.delete(mf);
+  }
   if (mf.position > before) return;
   mf.position = before;
   mf.executeCommand("moveAfterParent");

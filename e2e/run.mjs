@@ -27,6 +27,10 @@ export const CASES = [
   ["command into empty frac box", ["\\frac", "Space", "\\alpha", "Space", "Tab", "2"], "\\frac{\\alpha}{2}"],
   ["Tab in filled frac goes to denominator then out", ["\\frac", "1", "Tab", "2", "Tab", "+"], "\\frac{1}{2}+"],
   ["frac digit goes into numerator", ["\\frac", "1", "2", "Tab", "3"], "\\frac{12}{3}"],
+  ["Tab leaves a subscript with no box ahead", ["\\int", "Space", "_", "0", "Tab", "^", "1", "Tab", "x"], "\\int_{0}^{1}x"],
+  ["Gaussian integral", ["\\int", "Space", "_", "-", "\\infty", "Space", "Tab", "^", "\\infty", "Space", "Tab",
+    "e", "^", "-", "x", "^", "2", "Tab", "Tab", "d", "x", "=", "\\sqrt", "Space", "\\pi", "Space"],
+    "\\int_{-\\infty}^{\\infty}e^{-x^{2}}dx=\\sqrt{\\pi}"],
   ["alpha stays letters", ["alpha"], "alpha"],
   ["slash is not a fraction", ["a", "/", "b"], "a/b"],
   ["paren not auto-paired", ["(", "a"], "(a"],
@@ -77,6 +81,9 @@ for (const [name, keys, expected] of CASES) {
   }
   await page.waitForTimeout(50);
   const got = await page.evaluate(() => window.fieldValue());
+  // no key here leaves the formula (in Obsidian that would close the editor mid-formula)
+  const exits = await page.evaluate(() => window.exits);
+  if (exits.length) problem += ` left the formula: ${JSON.stringify(exits)}`;
   const ok = got === expected && !problem;
   if (!ok) failed++;
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}: ${JSON.stringify(got)}` +
