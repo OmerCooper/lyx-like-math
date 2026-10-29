@@ -1,5 +1,5 @@
 // Browser harness: a real MathLive field configured exactly as in the plugin.
-import { configureAfterMount, createLyxMathField, matrixCommand } from "../src/editor/mathField";
+import { configureAfterMount, createLyxMathField, focusField, matrixCommand } from "../src/editor/mathField";
 import { lyxBraces, withoutPlaceholders } from "../src/latex/braces";
 import { buttonMarkup } from "../src/panel/render";
 import { SYMBOL_GROUPS } from "../src/panel/symbols";
@@ -34,7 +34,7 @@ window.makeField = (display, initial) => {
   });
   document.body.appendChild(mf);
   configureAfterMount(mf);
-  mf.focus();
+  focusField(mf);
   current = mf;
 };
 

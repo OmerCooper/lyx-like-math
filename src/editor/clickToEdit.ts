@@ -1,7 +1,7 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Extension } from "@codemirror/state";
 import { validateLatex } from "mathlive";
-import { findMathAt, needsRawFallback } from "../latex/findMath";
+import { findMathAt, MathRange, needsRawFallback } from "../latex/findMath";
 import { formulaParts } from "../latex/numbering";
 import { MathSession } from "./session";
 
@@ -11,18 +11,35 @@ import { MathSession } from "./session";
 // tell CodeMirror to ignore their events.
 export function clickToEditExtension(isLivePreview: (view: EditorView) => boolean, onRaw: () => void): Extension {
   return ViewPlugin.define((view) => {
-    // The mouseup and click of a press that opened the editor are ours too: given to the rendered
-    // formula, Obsidian would put the cursor in its source and take the focus back (the editor
-    // would close at once).
+    const doc = view.dom.ownerDocument;
+    // The press is ours from mousedown to click: given to the rendered formula, Obsidian would
+    // select its source text (what is typed next would replace the formula).
     let swallowRest = false;
+    let pending: MathRange | null = null;
     const onRest = (event: MouseEvent) => {
       if (!swallowRest) return;
       if (event.type === "click") swallowRest = false;
       event.preventDefault();
       event.stopPropagation();
     };
+    // The editor opens on mouseup: while the button is down Live Preview keeps the rendered
+    // formula drawn, and it would hide the editor. Opened with the note's cursor inside the
+    // formula (as with Ctrl+M), Live Preview shows the source there, which the editor replaces.
+    // (Added at mousedown, so it runs after Obsidian's own mouseup handling.)
+    const onUp = (event: MouseEvent) => {
+      doc.removeEventListener("mouseup", onUp, true);
+      const range = pending;
+      pending = null;
+      if (!range) return;
+      event.preventDefault();
+      event.stopPropagation();
+      view.dispatch({ selection: { anchor: range.from + (range.display ? 2 : 1) } });
+      const { body, numbered } = formulaParts(range);
+      MathSession.open(view, range, body, numbered);
+    };
     const onMouseDown = (event: MouseEvent) => {
       swallowRest = false;
+      pending = null;
       if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
       const target = event.target as HTMLElement | null;
       const mathEl = target?.closest?.(".math");
@@ -30,9 +47,9 @@ export function clickToEditExtension(isLivePreview: (view: EditorView) => boolea
       if (!isLivePreview(view)) return;
 
       // a widget's inner element can map to the widget's end; the formula ends just before it
-      const doc = view.state.doc.toString();
+      const text = view.state.doc.toString();
       const pos = view.posAtDOM(mathEl);
-      const range = findMathAt(doc, pos) ?? (pos > 0 ? findMathAt(doc, pos - 1) : null);
+      const range = findMathAt(text, pos) ?? (pos > 0 ? findMathAt(text, pos - 1) : null);
       if (!range) return;
       if (needsRawFallback(range, validateLatex)) {
         onRaw();
@@ -40,13 +57,15 @@ export function clickToEditExtension(isLivePreview: (view: EditorView) => boolea
       }
       event.preventDefault();
       event.stopPropagation();
-      const { body, numbered } = formulaParts(range);
-      swallowRest = MathSession.open(view, range, body, numbered) !== null;
+      pending = range;
+      swallowRest = true;
+      doc.addEventListener("mouseup", onUp, true);
     };
     view.contentDOM.addEventListener("mousedown", onMouseDown, true);
     for (const type of ["mouseup", "click", "dblclick"] as const) view.contentDOM.addEventListener(type, onRest, true);
     return {
       destroy: () => {
+        doc.removeEventListener("mouseup", onUp, true);
         view.contentDOM.removeEventListener("mousedown", onMouseDown, true);
         for (const type of ["mouseup", "click", "dblclick"] as const) view.contentDOM.removeEventListener(type, onRest, true);
       },

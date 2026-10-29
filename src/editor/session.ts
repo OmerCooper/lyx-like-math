@@ -5,7 +5,7 @@ import { CommitInput, planCommit } from "../latex/commit";
 import { withoutPlaceholders } from "../latex/braces";
 import { formulaParts, renumberChanges, withTag } from "../latex/numbering";
 import { findMathAt } from "../latex/findMath";
-import { configureAfterMount, createLyxMathField } from "./mathField";
+import { configureAfterMount, createLyxMathField, focusField } from "./mathField";
 
 type Target = CommitInput["target"];
 type Exit = "after" | "before" | "none";
@@ -14,8 +14,8 @@ class MathFieldWidget extends WidgetType {
   constructor(readonly field: MathfieldElement, readonly display: boolean) { super(); }
 
   toDOM(): HTMLElement {
-    const wrap = document.createElement(this.display ? "div" : "span");
-    wrap.className = this.display ? "lyx-math-widget lyx-math-widget-block" : "lyx-math-widget";
+    const wrap = createEl(this.display ? "div" : "span",
+      { cls: this.display ? "lyx-math-widget lyx-math-widget-block" : "lyx-math-widget" });
     wrap.appendChild(this.field);
     return wrap;
   }
@@ -47,11 +47,18 @@ const widgetField = StateField.define<WidgetSpec | null>({
     for (const e of tr.effects) if (e.is(setWidget)) spec = e.value;
     return spec;
   },
-  provide: (f) => EditorView.decorations.from(f, (spec): DecorationSet => {
+  provide: (f) => EditorView.decorations.compute([f], (state): DecorationSet => {
+    const spec = state.field(f);
     if (!spec) return Decoration.none;
+    // Display math on lines of its own is replaced as a block: while the math editor has the
+    // focus, Live Preview draws every formula rendered, a display one as a block, which would
+    // cover an inline replacement.
+    const doc = state.doc;
+    const block = spec.widget.display && spec.from < spec.to &&
+      doc.lineAt(spec.from).from === spec.from && doc.lineAt(spec.to).to === spec.to;
     const deco = spec.from === spec.to
       ? Decoration.widget({ widget: spec.widget, side: 1 })
-      : Decoration.replace({ widget: spec.widget });
+      : Decoration.replace({ widget: spec.widget, block });
     return Decoration.set([deco.range(spec.from, spec.to)]);
   }),
 });
@@ -83,7 +90,7 @@ export class MathSession {
     this.field = createLyxMathField(target.display, initial, {
       onExit: (dir) => this.commit(dir),
       // focus leaving the window (alt-tab) is not leaving the formula
-      onBlur: () => setTimeout(() => { if (document.hasFocus()) this.commit("none"); }, 0),
+      onBlur: () => window.setTimeout(() => { if (document.hasFocus()) this.commit("none"); }, 0),
       onDirty: () => {},
     });
   }
@@ -109,8 +116,12 @@ export class MathSession {
     session.baseline = withoutPlaceholders(session.field.value);
     MathSession.active = session;
     MathSession.onActiveChange?.(true);
-    requestAnimationFrame(() => {
-      session.field.focus();
+    // keys typed right after Ctrl+M go to the math editor, not the note
+    focusField(session.field);
+    session.field.executeCommand("moveToMathfieldEnd");
+    // and again once the hotkey or click that opened it is done with the focus
+    window.requestAnimationFrame(() => {
+      focusField(session.field);
       session.field.executeCommand("moveToMathfieldEnd");
       session.ready = true;
       for (const latex of session.pending.splice(0)) session.insertTemplate(latex);
@@ -125,7 +136,7 @@ export class MathSession {
       return;
     }
     this.field.insert(latex, { selectionMode: "placeholder", format: "latex" });
-    this.field.focus();
+    focusField(this.field);
   }
 
   // Write the formula back. Returns the note's changes (null if nothing was written).

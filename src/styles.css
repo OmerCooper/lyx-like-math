@@ -1,6 +1,6 @@
 /* LyX Math styles */
 
-.lyx-math-widget math-field {
+.lyx-math-widget :is(.lyx-math-inline, .lyx-math-block) {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
   border: 1px solid var(--interactive-accent);
@@ -12,7 +12,7 @@
   font-size: 1.1em;
 }
 
-math-field.lyx-math-inline {
+.lyx-math-inline {
   display: inline-block;
   min-width: 2em;
   vertical-align: middle;
@@ -24,15 +24,15 @@ math-field.lyx-math-inline {
   margin: 0.5em 0;
 }
 
-math-field.lyx-math-block {
+.lyx-math-block {
   display: block;
   width: 100%;
   text-align: center;
   padding: 6px;
 }
 
-math-field::part(virtual-keyboard-toggle),
-math-field::part(menu-toggle) {
+:is(.lyx-math-inline, .lyx-math-block)::part(virtual-keyboard-toggle),
+:is(.lyx-math-inline, .lyx-math-block)::part(menu-toggle) {
   display: none;
 }
 

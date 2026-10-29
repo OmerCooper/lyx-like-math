@@ -5,7 +5,7 @@
 import fs from "fs";
 import path from "path";
 
-const MATHLIVE = "node_modules/mathlive/dist";
+const MATHLIVE = "node_modules/mathlive";
 
 // url(fonts/NAME.woff2) -> url(data:font/woff2;base64,...)
 export function inlineFonts(css, readFont) {

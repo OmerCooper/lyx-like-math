@@ -16,6 +16,14 @@ export function registeredMathfield(): typeof MathfieldElement {
   return (customElements.get("math-field") as typeof MathfieldElement | undefined) ?? MathfieldElement;
 }
 
+// MathLive 0.111 moves the keyboard focus only in a later timer (~70 ms); keys typed before that
+// go to the note. Focusing its input element takes the keys at once (as a click on it would).
+export function focusField(mf: MathfieldElement): void {
+  const input = mf.shadowRoot?.querySelector<HTMLElement>(".ML__keyboard-sink");
+  if (input) input.focus({ preventScroll: true });
+  else mf.focus();
+}
+
 const configured = new WeakSet<MathfieldElement>();
 const initialValue = new WeakMap<MathfieldElement, string>();
 
@@ -40,7 +48,7 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
       }
       // for complete-then-type the key goes on to MathLive and is typed into the first box
       if (action !== "none") finishCommand(mf);
-      if (action === "complete-then-type" && e.key === "\\") clearSelection(mf);
+      if (action === "complete-then-type" && e.key === "\\") startCommand(mf, e);
       return;
     }
     if (e.key === "Escape") {
@@ -57,8 +65,8 @@ export function createLyxMathField(display: boolean, initial: string, ev: LyxFie
       e.preventDefault();
       e.stopPropagation();
       lyxTab(mf);
-    } else if (e.key === "\\") {
-      clearSelection(mf);
+    } else if (e.key === "\\" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      startCommand(mf, e);
     }
   }, true);
 
@@ -99,13 +107,24 @@ export function matrixCommand(mf: MathfieldElement, command: "addRowAfter" | "ad
   mf.executeCommand(command);
   const environments = (latex: string) => (latex.match(/\\begin\{|\\displaylines/g) ?? []).length;
   if (environments(mf.value) > environments(before)) {
-    mf.value = before;
+    // (setting the value with the cursor inside the new environment throws in MathLive 0.111)
+    mf.executeCommand("undo");
+    if (mf.value !== before) mf.value = before;
     mf.position = position;
     return false;
   }
   return true;
 }
 
+
+// "\" starts a command. Done here rather than left to MathLive: right after the editor opens,
+// MathLive 0.111 can take the key as a literal backslash character.
+function startCommand(mf: MathfieldElement, e: KeyboardEvent): void {
+  e.preventDefault();
+  e.stopPropagation();
+  clearSelection(mf);
+  mf.executeCommand(["switchMode", "latex", "", "\\"]);
+}
 
 // MathLive leaves a typed "\" selected when it replaces a selected empty box, so the next
 // letter overwrites it; put the cursor in the box instead so "\" starts a command cleanly.
