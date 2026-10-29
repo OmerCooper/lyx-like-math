@@ -5,10 +5,12 @@ formula as rendered math, `\commands` finish with Space, and wrappers like `\fra
 give you empty boxes to fill. Notes stay plain Markdown: formulas are saved as ordinary
 `$...$` and `$$...$$` LaTeX, which Obsidian renders as usual.
 
+![Typing inline math with Ctrl+M, a numbered Gaussian integral with Ctrl+Shift+M, clicking a formula to edit it, and inserting a matrix from the formula panel](docs/demo.gif)
+
 > This plugin was created by AI ([Claude Code](https://claude.com/claude-code)), directed and
 > tested by Omer Cooper.
 
-Desktop only. The math editor is [MathLive](https://cortexjs.io/mathlive/) 0.101.0 (MIT), bundled
+Desktop only. The math editor is [MathLive](https://cortexjs.io/mathlive/) 0.111.1 (MIT), bundled
 with its fonts, so it works offline.
 
 ## Keys
