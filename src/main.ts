@@ -37,7 +37,7 @@ export default class LyxMathPlugin extends Plugin {
       editorCallback: (editor) => this.run(() => this.openAtCursor(editor, true)),
     });
     this.registerView(VIEW_TYPE_FORMULA_PANEL, (leaf) => new FormulaPanelView(leaf, {
-      insert: (latex) => this.run(() => this.insertFromPanel(latex)),
+      insert: (latex) => { void this.run(() => this.insertFromPanel(latex)); },
       action: (command) => this.matrixAction(command),
     }));
 

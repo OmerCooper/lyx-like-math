@@ -14,8 +14,8 @@ class MathFieldWidget extends WidgetType {
   constructor(readonly field: MathfieldElement, readonly display: boolean) { super(); }
 
   toDOM(): HTMLElement {
-    const wrap = document.createElement(this.display ? "div" : "span");
-    wrap.className = this.display ? "lyx-math-widget lyx-math-widget-block" : "lyx-math-widget";
+    const wrap = createEl(this.display ? "div" : "span",
+      { cls: this.display ? "lyx-math-widget lyx-math-widget-block" : "lyx-math-widget" });
     wrap.appendChild(this.field);
     return wrap;
   }
@@ -83,7 +83,7 @@ export class MathSession {
     this.field = createLyxMathField(target.display, initial, {
       onExit: (dir) => this.commit(dir),
       // focus leaving the window (alt-tab) is not leaving the formula
-      onBlur: () => setTimeout(() => { if (document.hasFocus()) this.commit("none"); }, 0),
+      onBlur: () => window.setTimeout(() => { if (document.hasFocus()) this.commit("none"); }, 0),
       onDirty: () => {},
     });
   }
@@ -109,7 +109,7 @@ export class MathSession {
     session.baseline = withoutPlaceholders(session.field.value);
     MathSession.active = session;
     MathSession.onActiveChange?.(true);
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       session.field.focus();
       session.field.executeCommand("moveToMathfieldEnd");
       session.ready = true;

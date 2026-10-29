@@ -13,7 +13,7 @@ export function showDisplayMenu(view: EditorView, current: boolean | null): Prom
       .setChecked(current === true).onClick(() => { choice = true; }));
     // Resolve only once the menu is gone and Obsidian has put focus back in the note;
     // opening the math editor earlier loses its focus to the note, which closes it again.
-    menu.onHide(() => requestAnimationFrame(() => setTimeout(() => resolve(choice), 0)));
+    menu.onHide(() => window.requestAnimationFrame(() => window.setTimeout(() => resolve(choice), 0)));
     const at = view.coordsAtPos(view.state.selection.main.head);
     menu.showAtPosition({ x: at?.left ?? 0, y: at?.bottom ?? 0 });
     // highlight the first option so Enter picks plain display math (Menu.select is not public API)

@@ -21,6 +21,13 @@ declare global {
   }
 }
 
+// Obsidian's global createEl, as far as the plugin uses it
+(window as unknown as { createEl: unknown }).createEl = (tag: string, o?: { cls?: string }) => {
+  const el = document.createElement(tag);
+  if (o?.cls) el.className = o.cls;
+  return el;
+};
+
 window.errors = [];
 window.addEventListener("error", (e) => window.errors.push(String(e.message)));
 window.rawNotices = 0;
