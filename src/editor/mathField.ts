@@ -16,6 +16,14 @@ export function registeredMathfield(): typeof MathfieldElement {
   return (customElements.get("math-field") as typeof MathfieldElement | undefined) ?? MathfieldElement;
 }
 
+// MathLive 0.111 moves the keyboard focus only in a later timer (~70 ms); keys typed before that
+// go to the note. Focusing its input element takes the keys at once (as a click on it would).
+export function focusField(mf: MathfieldElement): void {
+  const input = mf.shadowRoot?.querySelector<HTMLElement>(".ML__keyboard-sink");
+  if (input) input.focus({ preventScroll: true });
+  else mf.focus();
+}
+
 const configured = new WeakSet<MathfieldElement>();
 const initialValue = new WeakMap<MathfieldElement, string>();
 
@@ -99,7 +107,9 @@ export function matrixCommand(mf: MathfieldElement, command: "addRowAfter" | "ad
   mf.executeCommand(command);
   const environments = (latex: string) => (latex.match(/\\begin\{|\\displaylines/g) ?? []).length;
   if (environments(mf.value) > environments(before)) {
-    mf.value = before;
+    // (setting the value with the cursor inside the new environment throws in MathLive 0.111)
+    mf.executeCommand("undo");
+    if (mf.value !== before) mf.value = before;
     mf.position = position;
     return false;
   }

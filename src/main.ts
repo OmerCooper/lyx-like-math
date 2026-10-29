@@ -9,7 +9,7 @@ import { showDisplayMenu } from "./editor/displayMenu";
 import { initMathLiveAssets } from "./mathliveAssets";
 import { FormulaPanelView, VIEW_TYPE_FORMULA_PANEL } from "./panel/FormulaPanelView";
 import type { PanelAction } from "./panel/symbols";
-import { matrixCommand } from "./editor/mathField";
+import { focusField, matrixCommand } from "./editor/mathField";
 
 export const RAW_FALLBACK_NOTICE = "LyX-like Math: this formula is edited as LaTeX text";
 
@@ -95,7 +95,7 @@ export default class LyxMathPlugin extends Plugin {
       new Notice("LyX-like Math: put the cursor inside a matrix first");
       return;
     }
-    session.field.focus();
+    focusField(session.field);
   }
 
   private async openPanel(): Promise<void> {

@@ -5,7 +5,7 @@ import { CommitInput, planCommit } from "../latex/commit";
 import { withoutPlaceholders } from "../latex/braces";
 import { formulaParts, renumberChanges, withTag } from "../latex/numbering";
 import { findMathAt } from "../latex/findMath";
-import { configureAfterMount, createLyxMathField } from "./mathField";
+import { configureAfterMount, createLyxMathField, focusField } from "./mathField";
 
 type Target = CommitInput["target"];
 type Exit = "after" | "before" | "none";
@@ -110,7 +110,7 @@ export class MathSession {
     MathSession.active = session;
     MathSession.onActiveChange?.(true);
     window.requestAnimationFrame(() => {
-      session.field.focus();
+      focusField(session.field);
       session.field.executeCommand("moveToMathfieldEnd");
       session.ready = true;
       for (const latex of session.pending.splice(0)) session.insertTemplate(latex);
@@ -125,7 +125,7 @@ export class MathSession {
       return;
     }
     this.field.insert(latex, { selectionMode: "placeholder", format: "latex" });
-    this.field.focus();
+    focusField(this.field);
   }
 
   // Write the formula back. Returns the note's changes (null if nothing was written).
