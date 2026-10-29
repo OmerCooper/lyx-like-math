@@ -1,7 +1,7 @@
 {
   "id": "lyx-like-math",
   "name": "LyX-like Math",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minAppVersion": "1.7.2",
   "description": "Type math like in LyX: edit formulas as rendered math, finish commands with Space, fill empty boxes, and number equations.",
   "author": "Omer Cooper",
